@@ -1,0 +1,76 @@
+# Factopia Voice: architecture
+
+## Shape
+
+One Python core, one local API, one web interface. The same code runs on macOS
+and Windows; nothing is written per platform except the two small launchers.
+
+```
+ Web interface (factopia_voice/web)          what you see
+        |  HTTP on 127.0.0.1 only
+ Local API (server.py)                       thin: checks input, calls the pipeline
+        |
+ Pipeline (pipeline.py)                      the one path every clip takes
+   script -> [translate] -> clean -> dictionary -> segments -> engine -> assemble -> file -> library
+        |              |                 |                        |
+ translate/        text.py           engines/                 audio.py, library.py
+ (plug-in slot)    (rules)           (plug-in slot)           (export, history)
+        |
+ data/  profile.json  dictionary.json  library.json  output/  models/
+```
+
+## Why this shape
+
+- **Cross-platform by default.** The interface is HTML, so there is no separate
+  Mac and Windows GUI to maintain. A phone can later use the same interface
+  over Wi-Fi, without an Android app.
+- **Engines are plug-ins.** `engines/base.py` defines four methods
+  (`files`, `load`, `voices`, `synthesize`). Kokoro is one file. A better model
+  later is one new file plus one line in `engines/__init__.py`. Nothing else
+  changes, and old clips keep a record of which engine made them.
+- **Translation has a reserved slot.** The pipeline already calls
+  `translate/` before speech. Registering a translator switches it on.
+- **Data is separate from code.** Everything learned or created is in `data/`.
+  Updating the program is replacing the code folder.
+
+## How it improves over time
+
+| What | Where | How |
+|---|---|---|
+| Pronunciation | `data/dictionary.json` | Each fix is applied to all future clips |
+| Timing estimates | `profile.wps` | Recalibrated from every finished clip |
+| Voice settings | `data/profile.json` | Last speed, pause and format are kept |
+| Voice quality | `engines/` | Swap or add a model without touching the rest |
+
+## Adding things later
+
+**More voices (same engine).** The engine already reports all 54 Kokoro voices.
+Add a picker to the Studio panel that writes `profile.voice`.
+
+**Another language.** Kokoro covers English, Spanish, French, Hindi, Italian,
+Japanese, Portuguese and Mandarin. A language outside that list needs a second
+engine file. Check the model licence first: some multilingual models are
+non-commercial and cannot be used on a monetized channel.
+
+**Translation.** Add `translate/<name>.py` implementing `Translator`, register
+it in `translate/__init__.py`, and add a language picker that sends
+`target_language` to `/api/generate`. Offline candidates: Argos Translate
+(MIT/CC0, about 30 languages) or NLLB-200 through CTranslate2 (200 languages,
+non-commercial licence).
+
+**Phone access.** Bind the server to the local network behind a PIN and show
+the address as a QR code. Kept out of 2.0 on purpose: it widens exposure.
+
+**A packaged installer.** PyInstaller or Briefcase can wrap this folder into a
+.app and .exe once the feature set settles.
+
+## Resources (measured)
+
+Kokoro 82M on a 2-core cloud CPU, no GPU: 24 seconds of audio in about 10
+seconds, about 1.1 GB of memory while running, 354 MB of model files on disk.
+A recent laptop should be faster.
+
+## Security
+
+The server listens on 127.0.0.1 only, rejects requests whose Host or Origin is
+not the app itself, and serves audio only from `data/output`.
