@@ -37,3 +37,9 @@ NEEDS
 
 QUIT
   Settings > Quit Factopia Voice, or close the terminal window.
+
+FOR DEVELOPMENT
+  Run the tests:
+    uv run --python 3.12 --no-project --with-requirements requirements.txt \
+       --with-requirements requirements-dev.txt pytest -q
+  See CHANGELOG.md for what changed and LICENSES.md for third-party licences.
