@@ -132,6 +132,8 @@ function renderLibrary() {
     const reuse = el("button", { className: "btn ghost", textContent: "Reuse script" });
     reuse.addEventListener("click", () => { $("script").value = c.script; draft.set(c.script); measure(); show("studio"); $("script").focus(); });
     const dl = el("a", { className: "btn ghost", textContent: "Download", href: audioUrl(c) + "?download=1", download: c.file });
+    const cap = el("button", { className: "btn ghost", textContent: "Captions" });
+    cap.addEventListener("click", async () => { cap.disabled = true; try { stopPlayer(); await window.captionClip(c.id); } catch (e) { cap.textContent = e.message; } cap.disabled = false; });
     const del = el("button", { className: "btn ghost", textContent: "Delete" });
     del.addEventListener("click", async () => {
       if (del.dataset.sure !== "1") { del.dataset.sure = "1"; del.textContent = "Really delete?"; del.classList.add("danger");
@@ -141,7 +143,7 @@ function renderLibrary() {
     box.append(el("div", { className: "item" }, [play,
       el("div", {}, [el("div", { className: "item-title", textContent: c.title }),
         el("div", { className: "item-sub", textContent: `${c.created}  ·  ${c.seconds} sec  ·  ${c.words} words  ·  ${c.format.toUpperCase()}` })]),
-      el("div", { className: "item-actions" }, [reuse, dl, del])]));
+      el("div", { className: "item-actions" }, [reuse, cap, dl, del])]));
   }
 }
 

@@ -8,19 +8,23 @@ import sys
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import unquote, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 from . import __version__, library
+from . import fonts, projects, render
 from .config import CACHE, DATA, OUTPUT, PORT, WEB, dictionary_store, profile_store
 from .pipeline import Studio, clamp
 from .translate import REGISTRY as TRANSLATORS
 
 studio = Studio()
 ALLOWED_HOSTS = {f"127.0.0.1:{PORT}", f"localhost:{PORT}"}
-STATIC = {"/": "index.html", "/app.css": "app.css", "/app.js": "app.js", "/icon.svg": "icon.svg"}
+STATIC = {"/": "index.html", "/app.css": "app.css", "/app.js": "app.js", "/captions.js": "captions.js",
+          "/icon.svg": "icon.svg"}
+MAX_UPLOAD = 8 * 1024 ** 3
 TYPES = {".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8",
          ".js": "text/javascript; charset=utf-8", ".svg": "image/svg+xml",
-         ".mp3": "audio/mpeg", ".wav": "audio/wav"}
+         ".mp3": "audio/mpeg", ".wav": "audio/wav", ".mp4": "video/mp4",
+         ".srt": "application/x-subrip; charset=utf-8"}
 
 
 def state():
@@ -90,16 +94,34 @@ class Handler(BaseHTTPRequestHandler):
                 code = 206
             except ValueError:
                 return self.reply(416, {"error": "Bad range."}, headers={"Content-Range": f"bytes */{size}"})
-        with open(path, "rb") as f:
-            f.seek(start)
-            body = f.read(end - start + 1)
         headers = {"Accept-Ranges": "bytes"}
         if code == 206:
             headers["Content-Range"] = f"bytes {start}-{end}/{size}"
         if download_name:
             headers["Content-Disposition"] = f'attachment; filename="{download_name}"'
         ctype = TYPES.get(path.suffix.lower()) or mimetypes.guess_type(path.name)[0] or "application/octet-stream"
-        self.reply(code, body, ctype, headers)
+        self.send_response(code)
+        self.send_header("Content-Type", ctype)
+        self.send_header("Content-Length", str(end - start + 1))
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        for k, v in headers.items():
+            self.send_header(k, v)
+        self.end_headers()
+        if self.command == "HEAD":
+            return
+        with open(path, "rb") as f:               # streamed, so a large video never sits in memory
+            f.seek(start)
+            left = end - start + 1
+            while left > 0:
+                chunk = f.read(min(1 << 20, left))
+                if not chunk:
+                    break
+                try:
+                    self.wfile.write(chunk)
+                except (BrokenPipeError, ConnectionResetError):
+                    return
+                left -= len(chunk)
 
     def local_only(self):
         if self.headers.get("Host") not in ALLOWED_HOSTS:
@@ -119,6 +141,27 @@ class Handler(BaseHTTPRequestHandler):
             return self.reply(200, state())
         if path == "/preview.wav":
             return self.send_file(CACHE / "preview.wav")
+        if path == "/api/captions":
+            return self.reply(200, {"projects": projects.summaries(), "lengths": list(projects.captions.LENGTHS)})
+        if path == "/api/captions/fonts":
+            return self.reply(200, {"fonts": [{"id": f["id"], "label": f["label"]} for f in fonts.all_fonts()],
+                                    "default": fonts.default_id()})
+        if path in ("/api/captions/project", "/api/captions/job"):
+            ident = (parse_qs(url.query).get("id") or [""])[0]
+            try:
+                if path.endswith("/job"):
+                    job = projects.jobs.get(ident)
+                    return self.reply(200, job) if job else self.reply(404, {"error": "That job is no longer running."})
+                project = projects.load(ident)
+                project.pop("words", None)
+                return self.reply(200, project)
+            except ValueError as e:
+                return self.reply(404, {"error": str(e)})
+        if path.startswith("/captions/audio/"):
+            try:
+                return self.send_file(projects._folder(Path(path).name) / "audio.wav")
+            except ValueError:
+                return self.reply(404, {"error": "Not found."})
         if path.startswith("/audio/"):
             name = Path(path[7:]).name
             return self.send_file(OUTPUT / name, name if "download=1" in url.query else None)
@@ -132,6 +175,8 @@ class Handler(BaseHTTPRequestHandler):
         origin = self.headers.get("Origin")
         if origin is not None and origin.split("://")[-1] not in ALLOWED_HOSTS:
             return self.reply(403, {"error": "Forbidden."})
+        if urlparse(self.path).path == "/api/captions/import":
+            return self.receive_upload()
         try:
             length = int(self.headers.get("Content-Length") or 0)
             data = json.loads(self.rfile.read(length) or b"{}") if length < 2_000_000 else None
@@ -162,6 +207,37 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/library/delete":
                 library.delete(str(data.get("id") or ""))
                 return self.reply(200, library.items())
+            if path == "/api/captions/from-clip":
+                return self.reply(200, projects.create_from_clip(str(data.get("clip_id") or "")))
+            if path == "/api/captions/transcribe":
+                script = data.get("script")
+                job = projects.start_transcribe(str(data.get("id") or ""), None if script is None else str(script)[:20000],
+                                                data.get("length"))
+                return self.reply(200, job)
+            if path == "/api/captions/regroup":
+                project = projects.regroup(str(data.get("id") or ""), data.get("length"))
+                project.pop("words", None)
+                return self.reply(200, project)
+            if path == "/api/captions/save":
+                project = projects.update(str(data.get("id") or ""), data.get("lines"), data.get("style"))
+                return self.reply(200, {"lines": project["lines"], "style": project["style"]})
+            if path == "/api/captions/preview":
+                project = projects.load(str(data.get("id") or ""))
+                image = render.preview(projects.source_path(project), project["has_video"], project["width"],
+                                       project["height"], clamp(data.get("t"), 0, 1e6, 0.0),
+                                       str(data.get("text") or "")[:400], data.get("style") or project["style"])
+                import io
+                buffer = io.BytesIO()
+                image.save(buffer, "JPEG", quality=86)
+                return self.reply(200, buffer.getvalue(), "image/jpeg")
+            if path == "/api/captions/export":
+                ident = str(data.get("id") or "")
+                if data.get("kind") == "video":
+                    return self.reply(200, projects.start_export_video(ident))
+                return self.reply(200, projects.export_srt(ident))
+            if path == "/api/captions/delete":
+                projects.delete(str(data.get("id") or ""))
+                return self.reply(200, {"projects": projects.summaries()})
             if path == "/api/open":
                 open_folder(OUTPUT)
                 return self.reply(200, {"ok": True})
@@ -174,6 +250,42 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as e:
             return self.reply(500, {"error": f"Something went wrong: {e}"})
         self.reply(404, {"error": "Not found."})
+
+
+def _receive_upload(self):
+    """Save an imported video or audio file straight to disk, then make a captions project from it."""
+    try:
+        length = int(self.headers.get("Content-Length") or 0)
+        name = Path(unquote(self.headers.get("X-File-Name") or "")).name
+        if not name or length <= 0:
+            raise ValueError("No file was received.")
+        if length > MAX_UPLOAD:
+            raise ValueError("That file is larger than 8 GB.")
+        projects.PROJECTS.mkdir(parents=True, exist_ok=True)
+        temp = projects.PROJECTS / f"_upload_{threading.get_ident()}{Path(name).suffix.lower()}"
+        try:
+            with open(temp, "wb") as out:
+                left = length
+                while left > 0:
+                    chunk = self.rfile.read(min(1 << 20, left))
+                    if not chunk:
+                        raise ValueError("The upload was interrupted.")
+                    out.write(chunk)
+                    left -= len(chunk)
+            project = projects.create_from_file(temp, name)
+        finally:
+            temp.unlink(missing_ok=True)
+        project.pop("words", None)
+        return self.reply(200, project)
+    except (ValueError, RuntimeError) as e:
+        self.close_connection = True          # part of the body may be unread
+        return self.reply(400, {"error": str(e)})
+    except Exception as e:
+        self.close_connection = True
+        return self.reply(500, {"error": f"Something went wrong: {e}"})
+
+
+Handler.receive_upload = _receive_upload
 
 
 def open_folder(folder):

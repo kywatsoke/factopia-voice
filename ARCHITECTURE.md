@@ -19,6 +19,27 @@ and Windows; nothing is written per platform except the two small launchers.
  data/  profile.json  dictionary.json  library.json  output/  models/
 ```
 
+## Captions (2.1)
+
+```
+ video or audio file ─ media.py (ffmpeg) ─ audio.wav ─ listeners/ (own process) ─ words with times
+ Library clip + its script ───────────────────────────────────────┘            │
+                                   captions.py: align to script, group into lines
+                                                     │
+                 projects.py: one folder per project (source, track, style), background jobs
+                                                     │
+                 render.py: preview frame  ·  SRT  ·  video with captions burned in
+```
+
+- `listeners/` mirrors `engines/`: one file per speech-to-text model. Parakeet
+  (English) is the first; a multilingual model is another file.
+- Recognition runs as a separate process (`listeners/worker.py`) so its memory
+  is returned afterwards and its runtime cannot clash with the voice engine's.
+- `render.py` draws captions with Pillow and blends them onto raw frames piped
+  through ffmpeg. The preview and the export share that code.
+- The on-screen caption reader (2.2) and translation (2.3) will write to the
+  same caption track, so the editor, styling and export need no changes.
+
 ## Why this shape
 
 - **Cross-platform by default.** The interface is HTML, so there is no separate

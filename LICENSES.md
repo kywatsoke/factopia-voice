@@ -14,6 +14,11 @@ model is added or changed. Checked 7 October 2026.
 | libsndfile (inside soundfile) | Audio codecs | LGPL-2.1 | Yes | Yes, if kept as a replaceable library |
 | phonemizer 3.4 | Text to phonemes | GPL-3.0-or-later | Yes | **No**, unless the whole app is released under the GPL |
 | espeak-ng (via espeakng-loader) | Pronunciation engine behind phonemizer | GPL-3.0-or-later | Yes | **No**, same condition |
+| Parakeet TDT 0.6B v2 model | Speech to text (2.1) | CC BY 4.0 | Yes | Yes, with attribution to NVIDIA |
+| sherpa-onnx | Runs the speech-to-text model | Apache 2.0 | Yes | Yes, with notice |
+| Pillow | Draws captions | MIT-CMU | Yes | Yes, with notice |
+| imageio-ffmpeg | Locates the bundled ffmpeg | BSD-2-Clause | Yes | Yes, with notice |
+| ffmpeg binary (inside imageio-ffmpeg) | Reads and writes video | GPL build (includes x264) | Yes | **Check before 3.0**: ship an LGPL build or meet the GPL's terms |
 | uv | Sets up Python on first start | Apache 2.0 or MIT | Yes | Not bundled |
 | Python 3.12 | Runtime | PSF-2.0 | Yes | Yes |
 
@@ -22,7 +27,8 @@ model is added or changed. Checked 7 October 2026.
 - **Using the app yourself, and publishing the audio it makes, is unaffected.**
   These licences cover the software, not the voiceovers.
 - **Selling a closed-source app is blocked by two components today:** phonemizer
-  and espeak-ng are GPL. Before a public release, either replace the
+  and espeak-ng are GPL. The bundled ffmpeg is also a GPL build and needs the
+  same attention. Before a public release, either replace the
   text-to-phoneme step with a permissively licensed one, or release the app's
   own source under the GPL.
 - Licences shown are those declared by each package on 7 October 2026. This
@@ -32,7 +38,6 @@ model is added or changed. Checked 7 October 2026.
 
 | Component | Role | Licence to confirm at its spike |
 | --- | --- | --- |
-| Whisper models / faster-whisper | Speech to text | MIT |
+| Whisper models / faster-whisper | Speech to text in other languages | MIT |
 | RapidOCR with PaddleOCR models | On-screen caption reading | Apache 2.0 |
-| ffmpeg | Video export | LGPL or GPL depending on the build |
 | Translation engine | Caption translation | To be chosen |
