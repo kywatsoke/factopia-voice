@@ -22,6 +22,8 @@ Captions: the reverse of the voiceover.
   ffmpeg is bundled; nothing extra to install.
 - Large files are streamed to and from disk instead of held in memory.
 - Automated tests: 44 (was 31).
+- Verified on macOS (Apple silicon) on 7 October 2026: voiceover, speech to
+  text, exact-script captions, SRT and burned-in video export.
 
 ## 2.0.1 - 2026-10-07
 

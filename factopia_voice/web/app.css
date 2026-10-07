@@ -154,7 +154,10 @@ h2{font-size:18px;margin:4px 0 6px;letter-spacing:-.01em}
 #capStart .bar{margin-top:14px}
 .cap-lines{padding:14px 16px}
 .cap-tools{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-bottom:12px;border-bottom:1px solid var(--line);margin-bottom:6px}
-.cline{display:grid;grid-template-columns:30px 70px 70px minmax(0,1fr) auto;gap:6px;align-items:center;padding:5px 4px;border-radius:9px}
+.cline{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:5px 4px;border-radius:9px}
+.cline input[type=number]{width:70px;flex:none}
+.cline input[type=text]{flex:1 1 220px;min-width:0}
+.cline .acts{margin-left:auto}
 .cline.sel{background:var(--acc-soft)}
 .cline input{padding:7px 8px;font-size:14px;border-radius:8px}
 .cline input[type=number]{font-variant-numeric:tabular-nums;text-align:right;padding-right:4px}
@@ -171,4 +174,4 @@ h2{font-size:18px;margin:4px 0 6px;letter-spacing:-.01em}
 .pair{display:flex;align-items:center;gap:10px}
 .cap-side>.btn{width:100%}
 .cap-side .bar{margin-top:2px}
-@media (max-width:900px){.cap-grid{grid-template-columns:1fr}.cline{grid-template-columns:30px 64px 64px minmax(0,1fr)}.cline .acts{grid-column:2/5}}
+@media (max-width:1150px){.cap-grid{grid-template-columns:1fr}}
