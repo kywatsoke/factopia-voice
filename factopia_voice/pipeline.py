@@ -95,9 +95,9 @@ class Studio:
         spoken = script
         if target_language and target_language != voice.language:
             translator = get_translator()
-            if translator is None:
-                raise ValueError("Translation is not installed in this version.")
-            spoken = translator.translate(script, voice.language, target_language)
+            if not translator.status()["ready"]:
+                raise ValueError("Set up translation first.")
+            spoken = translator.translate(script, voice.language[:2], target_language)
 
         started = time.time()
         samples, rate, speech_seconds = self.render(spoken, voice.id, speed, pause)

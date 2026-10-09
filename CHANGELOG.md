@@ -2,6 +2,25 @@
 
 All notable changes to Factopia Voice. Versions follow MAJOR.MINOR.PATCH.
 
+## 2.2.0 - 2026-10-09
+
+Translation between English, Chinese and Burmese, in every direction.
+
+- Translate screen: paste text, pick the languages (or let the app detect the
+  source), translate, copy, or send an English result to the Studio.
+- Caption translation: translate a caption track into a new project that keeps
+  the video and timings. Lines are translated as whole sentences for context,
+  then split at clause marks to fit the screen.
+- Subtitle files: load an SRT into a project, or on its own, to translate it.
+  Chinese files in GB18030 encoding are read too.
+- Each project has a language. Chinese and Burmese captions wrap between
+  characters and syllables, get a font that has their letters, and fonts
+  without those letters are refused instead of drawing empty boxes.
+- Engine: Google's TranslateGemma (4B standard, 12B high quality) run locally
+  by Ollama. Translation needs the free Ollama app; everything else does not.
+- The on-screen caption reader is postponed.
+- Automated tests: 61 (was 44).
+
 ## 2.1.0 - 2026-10-07
 
 Captions: the reverse of the voiceover.

@@ -53,8 +53,10 @@ def test_empty_script_is_refused(studio):
         studio.generate("  [pause]  ")
 
 
-def test_translation_is_refused_until_a_translator_exists(studio):
-    with pytest.raises(ValueError, match="Translation"):
+def test_translation_is_refused_until_translation_is_set_up(studio, monkeypatch):
+    from factopia_voice.translate import ollama
+    monkeypatch.setattr(ollama, "BASE", "http://127.0.0.1:9")
+    with pytest.raises(ValueError, match="Set up translation"):
         studio.generate("hello there", target_language="my")
 
 

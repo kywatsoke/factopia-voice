@@ -40,6 +40,18 @@ and Windows; nothing is written per platform except the two small launchers.
 - The on-screen caption reader (2.2) and translation (2.3) will write to the
   same caption track, so the editor, styling and export need no changes.
 
+## Translation (2.2)
+
+- `languages.py` holds what differs between English, Chinese and Burmese:
+  detection, how words join, sentence and clause marks, and where a line may
+  break (words, characters, Burmese syllables).
+- `translate/ollama.py` implements the Translator contract with TranslateGemma
+  through Ollama's local API, using the model's official prompt. Ollama is a
+  separate app: it handles the GPU, the download and keeping the model loaded.
+- Caption translation groups lines into sentences, translates each with its
+  context, then spreads the result back over the sentence's time.
+- A translated track is a new project that links (not copies) the video.
+
 ## Why this shape
 
 - **Cross-platform by default.** The interface is HTML, so there is no separate

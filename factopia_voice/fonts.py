@@ -78,3 +78,48 @@ def find(font_id):
 
 def default_id():
     return find("")["id"]
+
+
+LANGUAGE_FONTS = {
+    "zh": [("PingFang SC", "Semibold"), ("Hiragino Sans GB", "W6"), ("STHeiti", "Medium"), ("Heiti SC", "Medium"),
+           ("Microsoft YaHei", "Bold"), ("Noto Sans CJK SC", "Black"), ("Noto Sans CJK SC", "Bold"),
+           ("Source Han Sans SC", "Bold"), ("WenQuanYi Zen Hei", "")],
+    "my": [("Myanmar Sangam MN", "Bold"), ("Myanmar MN", "Bold"), ("Noto Sans Myanmar", "Bold"), ("Padauk", "Bold"),
+           ("Myanmar Text", "Bold"), ("Myanmar Text", ""), ("Pyidaungsu", "Bold"), ("Myanmar Sangam MN", ""), ("Padauk", "")],
+}
+SAMPLES = {"en": "Ag", "zh": "蜂蜜永远不会变质", "my": "မြန်မာပျားရည်ဘယ်တော့မှ"}
+_coverage = {}
+
+
+def covers(font_id, lang):
+    """True when the font has every letter of a sample word in the language,
+    read from the font's own character map (so no empty boxes on screen)."""
+    key = (font_id, lang)
+    if key not in _coverage:
+        from fontTools.ttLib import TTFont
+        info = find(font_id)
+        try:
+            font = TTFont(info["path"], fontNumber=info["index"], lazy=True)
+            cmap = font.getBestCmap() or {}
+            font.close()
+        except Exception:
+            cmap = {}
+        _coverage[key] = all(ord(c) in cmap for c in SAMPLES.get(lang, "Ag"))
+    return _coverage[key]
+
+
+def for_language(lang, current=""):
+    """Keep the current font if it can write the language, otherwise pick one that can."""
+    if current and covers(current, lang):
+        return current
+    by_id = {f["id"]: f for f in all_fonts()}
+    for family, style in LANGUAGE_FONTS.get(lang, []):
+        if f"{family}|{style}" in by_id and covers(f"{family}|{style}", lang):
+            return f"{family}|{style}"
+    for f in all_fonts():
+        try:
+            if covers(f["id"], lang):
+                return f["id"]
+        except Exception:
+            continue
+    return current or default_id()

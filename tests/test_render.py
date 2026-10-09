@@ -49,3 +49,21 @@ def test_burn_writes_captions_into_the_picture(tmp_path):
     assert with_caption.max() > 200 and without.max() < 90          # white text only while the line is showing
     preview = render.preview(src, True, 270, 480, 0.5, "Hello there", render.DEFAULT_STYLE)
     assert np.asarray(preview, dtype=int).max() > 200
+
+
+@pytest.mark.parametrize("lang,text", [("zh", "考古学家在埃及古墓中发现了三千年前的蜂蜜而且它仍然可以安全食用"),
+                                       ("my", "ပျားရည်သည် ဘယ်တော့မှ မပုပ်ပါ။ သိပ္ပံပညာရှင်များက အီဂျစ်ဂူသင်္ချိုင်းများတွင် တွေ့ရှိခဲ့သည်။")])
+def test_chinese_and_burmese_wrap_inside_the_frame(lang, text):
+    font = fonts.for_language(lang)
+    if not fonts.covers(font, lang):
+        pytest.skip(f"no {lang} font on this machine")
+    style = {**render.DEFAULT_STYLE, "font": font, "uppercase": False, "width": 70}
+    image, (x, _) = render.caption_image(text, style, 1080, 1920)
+    assert image.width <= 1080 * 0.7 + 4 and x > 0 and image.height > 2 * 84
+
+
+def test_font_coverage_is_detected():
+    latin_only = next((f["id"] for f in fonts.all_fonts() if f["family"] == "DejaVu Sans"), None)
+    if latin_only is None:
+        pytest.skip("DejaVu Sans not installed")
+    assert fonts.covers(latin_only, "en") and not fonts.covers(latin_only, "my")

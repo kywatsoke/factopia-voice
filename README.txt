@@ -1,4 +1,4 @@
-FACTOPIA VOICE 2.1 - offline voiceover and captions studio
+FACTOPIA VOICE 2.2 - offline voiceover, captions and translation studio
 
 START
   Mac:      double-click "Start Factopia Voice (Mac).command"
@@ -19,6 +19,12 @@ USE
                  timing, pick a font and style, then export a subtitle file
                  (SRT) or a copy of the video with the captions burned in.
                  The first use downloads a speech model of about 460 MB.
+  Translate      English, Chinese and Burmese in any direction. Needs the free
+                 Ollama app (ollama.com): install and open it once, then press
+                 Set up on this screen to download the translation model
+                 (3.3 GB, or 8.1 GB for the high-quality one in Settings).
+                 In Captions, "Translate captions" makes a translated copy with
+                 the same timings. You can also load an SRT subtitle file.
   Library        Every clip you made, with its script. Play, download, reuse.
   Pronunciation  Fix how a word is said once; it is applied to every clip after.
   Settings       Target length, folders, and Quit.

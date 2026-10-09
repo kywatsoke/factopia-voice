@@ -175,3 +175,22 @@ h2{font-size:18px;margin:4px 0 6px;letter-spacing:-.01em}
 .cap-side>.btn{width:100%}
 .cap-side .bar{margin-top:2px}
 @media (max-width:1150px){.cap-grid{grid-template-columns:1fr}}
+
+/* ---------- translate ---------- */
+.tr-setup{margin-bottom:14px}
+.tr-setup-row{display:flex;align-items:center;gap:10px;font-weight:550}
+.dot.warn{background:#e8a013}
+.tr-grid{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:12px;align-items:stretch}
+.tr-box{display:flex;flex-direction:column;gap:10px}
+.tr-box select{padding:8px 10px;border:1px solid var(--line2);border-radius:9px;background:var(--field);font-weight:600;align-self:flex-start}
+.tr-box textarea{flex:1;min-height:260px;border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--field);resize:vertical;outline:none;font-size:16px;line-height:1.7}
+.tr-box textarea:focus{border-color:var(--acc)}
+.tr-swap{align-self:center;padding:8px 12px;font-size:18px}
+.tr-go{max-width:320px}
+#view-translate .bar{max-width:520px;margin-top:12px}
+.lang-pick{margin-left:10px;font-size:13.5px;color:var(--mute)}
+.lang-pick select{margin-left:6px;padding:3px 6px;border:1px solid var(--line2);border-radius:7px;background:var(--field);font-size:13.5px}
+.small-gap{margin:4px 0 10px}
+.pair-row{display:flex;gap:8px}.pair-row select{flex:1;padding:8px;border:1px solid var(--line2);border-radius:9px;background:var(--field)}
+@media (max-width:760px){.tr-grid{grid-template-columns:1fr}.tr-swap{justify-self:center}}
+.rows select{padding:6px 8px;border:1px solid var(--line2);border-radius:8px;background:var(--field);margin-right:8px}

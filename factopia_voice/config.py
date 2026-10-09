@@ -21,6 +21,7 @@ DEFAULT_PROFILE = {
     "format": "mp3",       # mp3 | wav
     "max_seconds": 50,     # target ceiling shown in the editor
     "wps": 2.6,            # words per second at speed 1.0; recalibrated after each clip
+    "translation_quality": "standard",   # standard (TranslateGemma 4B) | high (12B)
 }
 
 

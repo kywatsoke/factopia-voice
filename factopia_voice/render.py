@@ -53,15 +53,21 @@ def _rgb(value):
 
 
 def _wrap(draw, text, font, stroke, limit):
+    """Fill lines up to the width, breaking only where the language allows
+    (between words in English, between characters in Chinese, between
+    syllables in Burmese)."""
+    from .languages import segments
     lines, current = [], ""
-    for word in text.split():
-        trial = f"{current} {word}".strip()
-        if current and draw.textlength(trial, font=font) + 2 * stroke > limit:
-            lines.append(current)
-            current = word
+    for seg in segments(" ".join(text.split())):
+        trial = current + seg
+        if current.strip() and draw.textlength(trial.rstrip(), font=font) + 2 * stroke > limit:
+            lines.append(current.rstrip())
+            current = seg.lstrip()
         else:
             current = trial
-    return lines + [current] if current else lines
+    if current.strip():
+        lines.append(current.rstrip())
+    return lines
 
 
 def caption_image(text, style, width, height):

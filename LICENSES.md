@@ -19,6 +19,9 @@ model is added or changed. Checked 7 October 2026.
 | Pillow | Draws captions | MIT-CMU | Yes | Yes, with notice |
 | imageio-ffmpeg | Locates the bundled ffmpeg | BSD-2-Clause | Yes | Yes, with notice |
 | ffmpeg binary (inside imageio-ffmpeg) | Reads and writes video | GPL build (includes x264) | Yes | **Check before 3.0**: ship an LGPL build or meet the GPL's terms |
+| TranslateGemma 4B / 12B models | Translation (2.2) | Gemma Terms of Use | Yes | Model not bundled (Ollama downloads it); Google claims no rights in outputs; Prohibited Use Policy applies |
+| Ollama | Runs the translation model (separate app the user installs) | MIT | Yes | Not bundled |
+| fontTools | Checks which letters a font has | MIT | Yes | Yes, with notice |
 | uv | Sets up Python on first start | Apache 2.0 or MIT | Yes | Not bundled |
 | Python 3.12 | Runtime | PSF-2.0 | Yes | Yes |
 
@@ -40,4 +43,3 @@ model is added or changed. Checked 7 October 2026.
 | --- | --- | --- |
 | Whisper models / faster-whisper | Speech to text in other languages | MIT |
 | RapidOCR with PaddleOCR models | On-screen caption reading | Apache 2.0 |
-| Translation engine | Caption translation | To be chosen |

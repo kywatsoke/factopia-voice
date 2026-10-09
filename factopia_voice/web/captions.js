@@ -39,8 +39,22 @@
   function showList() { C.audio.pause(); $("capEditor").hidden = true; $("capList").hidden = false; loadList().catch(() => {}); }
 
   /* ---------- import ---------- */
+  async function importSrt(file, projectId) {
+    const headers = { "X-File-Name": encodeURIComponent(file.name) };
+    if (projectId) headers["X-Project"] = projectId;
+    const r = await fetch("/api/captions/import-srt", { method: "POST", headers, body: file });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.error || "That subtitle file could not be read.");
+    return data;
+  }
   function importFile(file) {
     if (!file) return;
+    if (/\.srt$/i.test(file.name)) {
+      say("capImportStatus", "Reading " + file.name, "busy");
+      importSrt(file).then(p => { say("capImportStatus", ""); $("capFile").value = ""; openProject(p.id); })
+        .catch(e => { say("capImportStatus", e.message, "err"); $("capFile").value = ""; });
+      return;
+    }
     say("capImportStatus", "Copying " + file.name, "busy"); bar("capUploadBar", 0); $("capChoose").disabled = true;
     const xhr = new XMLHttpRequest();
     xhr.open("POST", "/api/captions/import");
@@ -71,6 +85,13 @@
       $("stFont").replaceChildren(...f.fonts.map(x => el("option", { value: x.id, textContent: x.label })));
     }
     if (!C.p.style.font) C.p.style.font = C.fonts.default;
+    if (!$("capLang").options.length && S && S.languages) {
+      for (const [k, v] of Object.entries(S.languages)) {
+        $("capLang").append(el("option", { value: k, textContent: v.name }));
+        $("capTarget").append(el("option", { value: k, textContent: v.native === v.name ? v.name : `${v.name}  ${v.native}` }));
+      }
+    }
+    say("capTrStatus", ""); bar("capTrBar", null);
     show("captions"); $("capList").hidden = true; $("capEditor").hidden = false; $("capResult").hidden = true;
     say("capExportStatus", ""); say("capJobStatus", ""); bar("capJobBar", null); bar("capExportBar", null);
     paint();
@@ -83,6 +104,10 @@
     $("capStart").hidden = has; $("capLinesCard").hidden = !has;
     $("capScript").value = p.script || "";
     $("capExportVideo").hidden = !p.has_video;
+    $("capLang").value = p.language || "en";
+    for (const o of $("capTarget").options) o.hidden = o.value === (p.language || "en");
+    if ($("capTarget").value === (p.language || "en")) $("capTarget").value = [...$("capTarget").options].find(o => !o.hidden).value;
+    for (const id of ["capLength", "capLengthLabel", "capRedo"]) $(id).hidden = !p.has_words;
     document.querySelectorAll("#capLength button").forEach(b => b.classList.toggle("on", b.dataset.v === p.length));
     const s = p.style;
     $("stFont").value = s.font; $("stSize").value = s.size; $("stColor").value = s.color; $("stOutline").value = s.outline;
@@ -112,6 +137,7 @@
       const split = el("button", { textContent: "Split", title: "Split at the cursor" });
       const merge = el("button", { textContent: "Join", title: "Join with the next line" });
       const del = el("button", { textContent: "✕", title: "Delete this line" });
+      play.hidden = C.p.has_audio === false;
       const row = el("div", { className: "cline" + (i === C.sel ? " sel" : "") }, [play, start, end, text, el("div", { className: "acts" }, [split, merge, del])]);
       play.addEventListener("click", () => { select(i, row); playLine(i); });
       for (const input of [start, end, text]) input.addEventListener("focus", () => { if (C.sel !== i) select(i, row); });
@@ -119,9 +145,10 @@
       end.addEventListener("change", () => { line.end = Math.max(line.start + 0.1, +end.value || 0); end.value = line.end.toFixed(2); changed(); });
       text.addEventListener("input", () => { line.text = text.value; changed(); });
       split.addEventListener("click", () => {
-        const words = line.text.split(/\s+/).filter(Boolean); if (words.length < 2) return;
+        if (line.text.length < 2) return;
         let at = text.selectionStart; if (!at || at >= line.text.length) at = line.text.indexOf(" ", Math.floor(line.text.length / 2) - 1);
         if (at <= 0) at = line.text.indexOf(" ");
+        if (at <= 0) at = Math.floor(line.text.length / 2);
         const a = line.text.slice(0, at).trim(), b = line.text.slice(at).trim(); if (!a || !b) return;
         const mid = +(line.start + (line.end - line.start) * a.length / (a.length + b.length)).toFixed(2);
         C.p.lines.splice(i, 1, { start: line.start, end: mid, text: a }, { start: mid, end: line.end, text: b });
@@ -211,6 +238,37 @@
     try { C.p = await api("/api/captions/regroup", { id: C.p.id, length: b.dataset.v }); C.sel = 0; paint(); say("capSaved", ""); }
     catch (err) { say("capSaved", err.message, "err"); }
     document.querySelectorAll("#capLength button").forEach(x => { x.textContent = { short: "Short", medium: "Medium", long: "Sentences" }[x.dataset.v]; x.dataset.sure = ""; });
+  });
+
+  $("capLoadSrt").addEventListener("click", () => $("capSrtFile").click());
+  $("capSrtFile").addEventListener("change", async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try { const p = await importSrt(f, C.p.id); C.p = p; C.sel = 0; paint(); }
+    catch (err) { say("capJobStatus", err.message, "err"); }
+    $("capSrtFile").value = "";
+  });
+  $("capLang").addEventListener("change", async () => {
+    clearTimeout(C.saveTimer);
+    try { await api("/api/captions/save", { id: C.p.id, lines: C.p.lines, language: $("capLang").value });
+      C.p = await api("/api/captions/project?id=" + C.p.id); paint(); say("capSaved", "Language set"); }
+    catch (e) { say("capSaved", e.message, "err"); }
+  });
+
+  /* ---------- translation ---------- */
+  $("capTranslate").addEventListener("click", async () => {
+    const btn = $("capTranslate"); btn.disabled = true;
+    try {
+      C.dirty = true; await save();
+      const job = await api("/api/captions/translate", { id: C.p.id, target: $("capTarget").value });
+      const r = await pollJob(job, j => { bar("capTrBar", j.percent); say("capTrStatus", j.detail, "busy"); });
+      bar("capTrBar", null); say("capTrStatus", "");
+      await openProject(r.id);
+      say("capTrStatus", `Translated ${r.sentences} sentences into ${r.lines} lines. This is the new copy.`);
+    } catch (e) {
+      bar("capTrBar", null); say("capTrStatus", e.message, "err");
+      if (/Set up translation/.test(e.message) && window.translationStatus) window.translationStatus();
+    }
+    btn.disabled = false;
   });
 
   /* ---------- export ---------- */

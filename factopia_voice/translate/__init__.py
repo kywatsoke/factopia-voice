@@ -1,12 +1,12 @@
-"""Translator registry (empty in 2.0). Register a Translator subclass here to
-switch the feature on, e.g. REGISTRY["argos"] = ArgosTranslator."""
+"""Translator registry. TranslateGemma on Ollama covers English, Chinese and
+Burmese in every direction. Register another Translator subclass to add an engine."""
+from ..config import profile_store
 from .base import Translator
+from .ollama import MODELS as QUALITIES, OllamaTranslator
 
-REGISTRY = {}
+REGISTRY = {OllamaTranslator.id: OllamaTranslator}
 
 
 def get_translator(translator_id=None):
-    if not REGISTRY:
-        return None
     cls = REGISTRY.get(translator_id) or next(iter(REGISTRY.values()))
-    return cls()
+    return cls(profile_store.load().get("translation_quality", "standard"))

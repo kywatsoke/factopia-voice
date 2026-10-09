@@ -125,3 +125,95 @@ def _stamp(seconds):
 def srt(lines):
     return "\n".join(f"{i}\n{_stamp(l['start'])} --> {_stamp(l['end'])}\n{l['text']}\n"
                      for i, l in enumerate(lines, 1))
+
+
+# ---- subtitle files and translation helpers (2.2) ---------------------------
+_TIME = re.compile(r"(\d+):(\d{1,2}):(\d{1,2})[,.](\d{1,3})")
+
+
+def parse_srt(text):
+    """Read an SRT subtitle file into caption lines. Tolerates missing numbers,
+    Windows line endings, a byte-order mark and dots instead of commas."""
+    text = text.replace("﻿", "").replace("\r\n", "\n").replace("\r", "\n")
+    lines = []
+    for block in re.split(r"\n\s*\n", text):
+        rows = [r for r in block.strip().split("\n") if r.strip()]
+        for k, row in enumerate(rows):
+            if "-->" in row:
+                a, b = row.split("-->", 1)
+                ta, tb = _TIME.search(a), _TIME.search(b)
+                if ta and tb:
+                    sec = lambda m: int(m[1]) * 3600 + int(m[2]) * 60 + int(m[3]) + int(m[4].ljust(3, "0")) / 1000
+                    body = " ".join(re.sub(r"<[^>]+>|\{\\[^}]*\}", "", r).strip() for r in rows[k + 1:])
+                    if body.strip():
+                        lines.append({"start": sec(ta), "end": sec(tb), "text": body})
+                break
+    if not lines:
+        raise ValueError("No subtitles were found in that file. Check it is an SRT file.")
+    return tidy(lines)
+
+
+def sentences(lines, lang="en", max_gap=1.0, max_seconds=9.0):
+    """Group caption lines into whole sentences, so translation sees complete
+    thoughts instead of fragments. Returns [{"start", "end", "text"}]."""
+    from .languages import SENTENCE_END, join
+    groups, current = [], []
+    for line in lines:
+        if current and (line["start"] - current[-1]["end"] > max_gap or line["end"] - current[0]["start"] > max_seconds):
+            groups.append(current)
+            current = []
+        current.append(line)
+        if line["text"].rstrip()[-1:] in SENTENCE_END:
+            groups.append(current)
+            current = []
+    if current:
+        groups.append(current)
+    return [{"start": g[0]["start"], "end": g[-1]["end"], "text": join([l["text"] for l in g], lang)} for g in groups]
+
+
+def spread(text, start, end, lang):
+    """Turn one translated sentence into caption lines no longer than the
+    language's limit, splitting at clause marks first, and sharing the
+    sentence's time in proportion to length."""
+    from .languages import CLAUSE_MARKS, LANGUAGES, segments, valid
+    limit = LANGUAGES[valid(lang)]["max_chars"]
+    text = " ".join(text.split())
+    if len(text) <= limit:
+        return [{"start": start, "end": end, "text": text}]
+    pieces, buf = [], ""
+    for seg in segments(text):
+        buf += seg
+        if seg.rstrip()[-1:] in CLAUSE_MARKS:
+            pieces.append(buf)
+            buf = ""
+    if buf:
+        pieces.append(buf)
+    chunks, cur = [], ""
+    for piece in pieces:                       # whole clauses where they fit
+        if cur and len(cur) + len(piece) > limit:
+            chunks.append(cur)
+            cur = ""
+        cur += piece
+    if cur:
+        chunks.append(cur)
+    final = []
+    for chunk in chunks:                       # a clause that is still too long is cut at break points
+        if len(chunk) <= limit * 1.25:
+            final.append(chunk)
+            continue
+        cur = ""
+        for seg in segments(chunk):
+            if cur and len(cur) + len(seg) > limit:
+                final.append(cur)
+                cur = ""
+            cur += seg
+        if cur:
+            final.append(cur)
+    final = [c.strip() for c in final if c.strip()]
+    total = sum(len(c) for c in final) or 1
+    out, t = [], start
+    for i, chunk in enumerate(final):
+        nxt = end if i == len(final) - 1 else round(t + (end - start) * len(chunk) / total, 2)
+        out.append({"start": round(t, 2), "end": nxt, "text": chunk})
+        t = nxt
+    return out

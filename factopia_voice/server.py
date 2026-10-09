@@ -11,14 +11,15 @@ from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
 
 from . import __version__, library
-from . import fonts, projects, render
+from . import fonts, languages, projects, render
+from .translate import QUALITIES, get_translator
 from .config import CACHE, DATA, OUTPUT, PORT, WEB, dictionary_store, profile_store
 from .pipeline import Studio, clamp
-from .translate import REGISTRY as TRANSLATORS
 
 studio = Studio()
 ALLOWED_HOSTS = {f"127.0.0.1:{PORT}", f"localhost:{PORT}"}
 STATIC = {"/": "index.html", "/app.css": "app.css", "/app.js": "app.js", "/captions.js": "captions.js",
+          "/translate.js": "translate.js",
           "/icon.svg": "icon.svg"}
 MAX_UPLOAD = 8 * 1024 ** 3
 TYPES = {".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8",
@@ -38,8 +39,18 @@ def state():
                    "voices": len(engine.voices())} if engine else None,
         "folder": str(OUTPUT), "data_folder": str(DATA),
         "dictionary": dictionary_store.load(), "library": library.items(),
-        "translation": bool(TRANSLATORS),
+        "languages": {k: {"name": v["name"], "native": v["native"]} for k, v in languages.LANGUAGES.items()},
+        "translation_qualities": {k: {"model": m, "size": size} for k, (m, size) in QUALITIES.items()},
     }
+
+
+def public(project):
+    """What the browser needs of a project: everything except the word timings."""
+    project = dict(project)
+    project["has_words"] = bool(project.pop("words", None))
+    project.setdefault("language", "en")
+    project.setdefault("has_audio", True)
+    return project
 
 
 def clean_dictionary(entries):
@@ -146,15 +157,15 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/captions/fonts":
             return self.reply(200, {"fonts": [{"id": f["id"], "label": f["label"]} for f in fonts.all_fonts()],
                                     "default": fonts.default_id()})
+        if path == "/api/translate/status":
+            return self.reply(200, get_translator().status())
         if path in ("/api/captions/project", "/api/captions/job"):
             ident = (parse_qs(url.query).get("id") or [""])[0]
             try:
                 if path.endswith("/job"):
                     job = projects.jobs.get(ident)
                     return self.reply(200, job) if job else self.reply(404, {"error": "That job is no longer running."})
-                project = projects.load(ident)
-                project.pop("words", None)
-                return self.reply(200, project)
+                return self.reply(200, public(projects.load(ident)))
             except ValueError as e:
                 return self.reply(404, {"error": str(e)})
         if path.startswith("/captions/audio/"):
@@ -177,6 +188,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.reply(403, {"error": "Forbidden."})
         if urlparse(self.path).path == "/api/captions/import":
             return self.receive_upload()
+        if urlparse(self.path).path == "/api/captions/import-srt":
+            return self.receive_srt()
         try:
             length = int(self.headers.get("Content-Length") or 0)
             data = json.loads(self.rfile.read(length) or b"{}") if length < 2_000_000 else None
@@ -208,19 +221,30 @@ class Handler(BaseHTTPRequestHandler):
                 library.delete(str(data.get("id") or ""))
                 return self.reply(200, library.items())
             if path == "/api/captions/from-clip":
-                return self.reply(200, projects.create_from_clip(str(data.get("clip_id") or "")))
+                return self.reply(200, public(projects.create_from_clip(str(data.get("clip_id") or ""))))
             if path == "/api/captions/transcribe":
                 script = data.get("script")
                 job = projects.start_transcribe(str(data.get("id") or ""), None if script is None else str(script)[:20000],
                                                 data.get("length"))
                 return self.reply(200, job)
             if path == "/api/captions/regroup":
-                project = projects.regroup(str(data.get("id") or ""), data.get("length"))
-                project.pop("words", None)
-                return self.reply(200, project)
+                return self.reply(200, public(projects.regroup(str(data.get("id") or ""), data.get("length"))))
             if path == "/api/captions/save":
-                project = projects.update(str(data.get("id") or ""), data.get("lines"), data.get("style"))
-                return self.reply(200, {"lines": project["lines"], "style": project["style"]})
+                project = projects.update(str(data.get("id") or ""), data.get("lines"), data.get("style"), data.get("language"))
+                return self.reply(200, {"lines": project["lines"], "style": project["style"], "language": project["language"]})
+            if path == "/api/captions/translate":
+                return self.reply(200, projects.start_translate(str(data.get("id") or ""), data.get("target")))
+            if path == "/api/translate/text":
+                return self.reply(200, projects.start_translate_text(str(data.get("text") or ""), str(data.get("source") or "auto"),
+                                                                     data.get("target")))
+            if path == "/api/translate/setup":
+                if data.get("quality") in QUALITIES:
+                    profile = profile_store.load()
+                    profile["translation_quality"] = data["quality"]
+                    profile_store.save(profile)
+                if data.get("check_only"):
+                    return self.reply(200, get_translator().status())
+                return self.reply(200, projects.start_translation_setup())
             if path == "/api/captions/preview":
                 project = projects.load(str(data.get("id") or ""))
                 image = render.preview(projects.source_path(project), project["has_video"], project["width"],
@@ -248,6 +272,8 @@ class Handler(BaseHTTPRequestHandler):
         except (ValueError, RuntimeError) as e:
             return self.reply(400, {"error": str(e)})
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             return self.reply(500, {"error": f"Something went wrong: {e}"})
         self.reply(404, {"error": "Not found."})
 
@@ -275,8 +301,7 @@ def _receive_upload(self):
             project = projects.create_from_file(temp, name)
         finally:
             temp.unlink(missing_ok=True)
-        project.pop("words", None)
-        return self.reply(200, project)
+        return self.reply(200, public(project))
     except (ValueError, RuntimeError) as e:
         self.close_connection = True          # part of the body may be unread
         return self.reply(400, {"error": str(e)})
@@ -286,6 +311,31 @@ def _receive_upload(self):
 
 
 Handler.receive_upload = _receive_upload
+
+
+def _receive_srt(self):
+    """A subtitle file, either for an existing project (X-Project) or on its own."""
+    try:
+        length = int(self.headers.get("Content-Length") or 0)
+        if not 0 < length < 20_000_000:
+            raise ValueError("That subtitle file is empty or too large.")
+        raw = self.rfile.read(length)
+        try:
+            text = raw.decode("utf-8-sig")
+        except UnicodeDecodeError:
+            text = raw.decode("gb18030", errors="replace")          # common for Chinese subtitle files
+        project = projects.import_srt(text, unquote(self.headers.get("X-File-Name") or "subtitles.srt"),
+                                      self.headers.get("X-Project") or None, self.headers.get("X-Language") or None)
+        return self.reply(200, public(project))
+    except (ValueError, RuntimeError) as e:
+        self.close_connection = True
+        return self.reply(400, {"error": str(e)})
+    except Exception as e:
+        self.close_connection = True
+        return self.reply(500, {"error": f"Something went wrong: {e}"})
+
+
+Handler.receive_srt = _receive_srt
 
 
 def open_folder(folder):

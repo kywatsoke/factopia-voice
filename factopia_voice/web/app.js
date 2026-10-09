@@ -190,7 +190,6 @@ function paint(first) {
   if (S.engine) $("sEngine").textContent = `${S.engine.name} (${S.engine.license} licence), runs offline on this computer`;
   $("sFolder").textContent = S.folder; $("sData").textContent = S.data_folder;
   $("sVersion").textContent = S.version;
-  $("sTranslate").textContent = S.translation ? "Installed" : "Not in this version yet";
   $("maxLabel").textContent = p.max_seconds;
   if (first) {
     $("speed").value = p.speed; $("pause").value = p.pause; setFormat(p.format); $("sMax").value = p.max_seconds;
