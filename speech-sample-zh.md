@@ -8,31 +8,125 @@ Reference: 蜂蜜永远不会变质。考古学家在埃及古墓中发现了三
 
 | Engine | Text | Simplified CER | Speed (x real time) | Timings | First timings |
 | --- | --- | --- | --- | --- | --- |
-| SenseVoice-Small int8 (sherpa-onnx) | 蜂蜜永远不会变质考古学家在埃及古墓中发现了三千年前的蜂蜜至今仍然可以食用章鱼有三颗心脏其中两颗在它游泳的时候会停止跳动金星上的一天比它的一年还要长竹子是世界上生长最快的植物之一有些品种一天可以长进一米这种水母可以长生不老它受伤以后会变回水溪重新开始生命那么接下来会发生什么呢我们一起去看看吧 | 1.4% | 11.4x | 145 token times | [["蜂", 0.12], ["蜜", 0.3], ["永", 0.6], ["远", 0.78], ["不", 0.96], ["会", 1.14]] |
-| Whisper small int8 (faster-whisper) | failed: TypeError: open() got an unexpected keyword argument 'metadata_errors' | | | | |
-| Whisper large-v3-turbo int8 (faster-whisper) | failed: TypeError: open() got an unexpected keyword argument 'metadata_errors' | | | | |
+| SenseVoice 2024-07-17-int8-android-aarch64, language zh | failed: StopIteration:  | | | | |
+| SenseVoice 2024-07-17-int8-android-aarch64, language auto | failed: StopIteration:  | | | | |
+| SenseVoice 2024-07-17-int8-linux-x64, language zh | failed: StopIteration:  | | | | |
+| SenseVoice 2024-07-17-int8-linux-x64, language auto | failed: StopIteration:  | | | | |
+| SenseVoice 2025-09-09-int8-android-aarch64, language zh | failed: StopIteration:  | | | | |
+| SenseVoice 2025-09-09-int8-android-aarch64, language auto | failed: StopIteration:  | | | | |
+| SenseVoice 2025-09-09-int8-linux-x64, language zh | failed: StopIteration:  | | | | |
+| SenseVoice 2025-09-09-int8-linux-x64, language auto | failed: StopIteration:  | | | | |
+| SenseVoice int8-2024-07-17, language zh | 蜂蜜永远不会变质。考古学家在埃及古墓中发现了3000年前的蜂蜜，至今仍然可以食用。章鱼有3颗心脏，其中两颗在它游泳的时候会停止跳动。金星上的一天比它的一年还要长。竹子是世界上生长最快的植物之一，有些品种一天可以长进一米。这种水母可以长生不老，它受伤以后会变回水溪重新开始生命。那么接下来会发生什么呢？我们一起去看看吧。 ⟶ punctuated (1.83 s): 蜂蜜永远不会变质。。考古学家在埃及古墓中发现了3000年前的蜂蜜。，至今仍然可以食用。。章鱼有3颗心脏。，其中两颗在它游泳的时候会停止跳动。。金星上的一天比它的一年还要长。。竹子是世界上生长最快的植物之一。，有些品种一天可以长进一米。这种水母可以长生不老。，它受伤以后会变回水溪，重新开始生命。。那么接下来会发生什么呢？？我们一起去看看吧。。 | 4.8% | 11.3x | 159 token times | [["蜂", 0.18], ["蜜", 0.3], ["永", 0.6], ["远", 0.78], ["不", 0.96], ["会", 1.14]] |
+| SenseVoice int8-2024-07-17, language auto | 蜂蜜永远不会变质。考古学家在埃及古墓中发现了3000年前的蜂蜜，至今仍然可以食用。章鱼有3颗心脏，其中两颗在它游泳的时候会停止跳动。金星上的一天比它的一年还要长。竹子是世界上生长最快的植物之一，有些品种一天可以长进一米。这种水母可以长生不老，它受伤以后会变回水溪重新开始生命。那么接下来会发生什么呢？我们一起去看看吧。 | 4.8% | 9.2x | 159 token times | [["蜂", 0.18], ["蜜", 0.3], ["永", 0.6], ["远", 0.78], ["不", 0.96], ["会", 1.14]] |
+| SenseVoice int8-2025-09-09, language zh | 蜂蜜永远不会变质考古学家在埃及古墓中发现了三千年前的蜂蜜至今仍然可以食用章鱼有三颗心脏其中两颗在它游泳的时候会停止跳动金星上的一天比它的一年还要长竹子是世界上生长最快的植物之一有些品种一天可以长进一米这种水母可以长生不老它受伤以后会变回水溪重新开始生命那么接下来会发生什么呢我们一起去看看吧 ⟶ punctuated (0.09 s): 蜂蜜永远不会变质。考古学家在埃及古墓中发现了三千年前的蜂蜜，至今仍然可以食用。章鱼有三颗心脏，其中两颗在它游泳的时候会停止跳动，金星上的一天比它的一年还要长。竹子是世界上生长最快的植物之一，有些品种一天可以长进一米，这种水母可以长生不老，它受伤以后会变回水溪，重新开始生命。那么接下来会发生什么呢？我们一起去看看吧。 | 1.4% | 10.3x | 145 token times | [["蜂", 0.12], ["蜜", 0.3], ["永", 0.6], ["远", 0.78], ["不", 0.96], ["会", 1.14]] |
+| SenseVoice int8-2025-09-09, language auto | 蜂蜜永远不会变质考古学家在埃及古墓中发现了三千年前的蜂蜜至今仍然可以食用章鱼有三颗心脏其中两颗在它游泳的时候会停止跳动金星上的一天比它的一年还要长竹子是世界上生长最快的植物之一有些品种一天可以长进一米这种水母可以长生不老它受伤以后会变回水溪重新开始生命那么接下来会发生什么呢我们一起去看看吧 | 1.4% | 10.9x | 145 token times | [["蜂", 0.12], ["蜜", 0.3], ["永", 0.6], ["远", 0.78], ["不", 0.96], ["会", 1.14]] |
+| Whisper small int8 (faster-whisper) | 蜂蜜永远不会变质,考古学家在埃及古墓中发现了三千年前的蜂蜜,至今仍然可以使用。章鱼有三颗心脏,其中两颗在它游泳的时候会停止跳动。金星上的一天比它的一年还要长。竹子是世界上生长最快的植物之一,有些贫重一天,可以长近一米。这种水母可以长生不老,它受伤以后会变回水溪重新开始生命。那么接下来会发生什么呢?我们一起去看看吧! | 2.8% | 1.9x | 130 word times | [["蜂", 0.0, 0.22], ["蜜", 0.22, 0.46], ["永", 0.46, 0.68], ["远", 0.68, 0.92], ["不会", 0.92, 1.18], ["变", 1.18, 1.48]] |
+| Whisper large-v3-turbo int8 (faster-whisper) | 蜂蜜永远不会变质,考古学家在埃及古墓中发现了三千年前的蜂蜜,至今仍然可以食用。章鱼有三颗心脏,其中两颗在它游泳的时候会停止跳动。金星上的一天比它的一年还要长。竹子是世界上生长最快的植物之一,有些品种一天可以长近一米。这种水母可以长生不老,它受伤以后会变回水溪重新开始生命。那么接下来会发生什么呢?我们一起去看看吧。 | 0.7% | 1.1x | 130 word times | [["蜂", 0.0, 0.24], ["蜜", 0.24, 0.46], ["永", 0.46, 0.62], ["远", 0.62, 0.9], ["不会", 0.9, 1.26], ["变", 1.26, 1.5]] |
 
 ## SenseVoice test recording zh.wav (human)
 
 | Engine | Text | Simplified CER | Speed (x real time) | Timings | First timings |
 | --- | --- | --- | --- | --- | --- |
-| SenseVoice-Small int8 (sherpa-onnx) | 饭时间早上九点至下午五点 | - | 10.2x | 12 token times | [["饭", 0.9], ["时", 1.26], ["间", 1.5], ["早", 1.86], ["上", 2.1], ["九", 2.52]] |
-| Whisper small int8 (faster-whisper) | failed: TypeError: open() got an unexpected keyword argument 'metadata_errors' | | | | |
-| Whisper large-v3-turbo int8 (faster-whisper) | failed: TypeError: open() got an unexpected keyword argument 'metadata_errors' | | | | |
+| SenseVoice 2024-07-17-int8-android-aarch64, language zh | failed: StopIteration:  | | | | |
+| SenseVoice 2024-07-17-int8-android-aarch64, language auto | failed: StopIteration:  | | | | |
+| SenseVoice 2024-07-17-int8-linux-x64, language zh | failed: StopIteration:  | | | | |
+| SenseVoice 2024-07-17-int8-linux-x64, language auto | failed: StopIteration:  | | | | |
+| SenseVoice 2025-09-09-int8-android-aarch64, language zh | failed: StopIteration:  | | | | |
+| SenseVoice 2025-09-09-int8-android-aarch64, language auto | failed: StopIteration:  | | | | |
+| SenseVoice 2025-09-09-int8-linux-x64, language zh | failed: StopIteration:  | | | | |
+| SenseVoice 2025-09-09-int8-linux-x64, language auto | failed: StopIteration:  | | | | |
+| SenseVoice int8-2024-07-17, language zh | 开饭时间早上9点至下午5点。 ⟶ punctuated (0.04 s): 开饭时间早上9点至下午5点。。 | - | 2.4x | 14 token times | [["开", 0.72], ["饭", 0.96], ["时", 1.26], ["间", 1.5], ["早", 1.92], ["上", 2.1]] |
+| SenseVoice int8-2024-07-17, language auto | 开饭时间早上9点至下午5点。 | - | 2.5x | 14 token times | [["开", 0.72], ["饭", 0.96], ["时", 1.26], ["间", 1.5], ["早", 1.92], ["上", 2.1]] |
+| SenseVoice int8-2025-09-09, language zh | 放时间早上九点至下午五点 ⟶ punctuated (0.02 s): 放时间，早上九点至下午五点。 | - | 2.7x | 12 token times | [["放", 0.9], ["时", 1.26], ["间", 1.5], ["早", 1.86], ["上", 2.1], ["九", 2.52]] |
+| SenseVoice int8-2025-09-09, language auto | 饭时间早上九点至下午五点 | - | 2.8x | 12 token times | [["饭", 0.9], ["时", 1.26], ["间", 1.5], ["早", 1.86], ["上", 2.1], ["九", 2.52]] |
+| Whisper small int8 (faster-whisper) | 开放时间早上九点至下午五点。 | - | 1.6x | 12 word times | [["开", 0.37, 0.89], ["放", 0.89, 1.15], ["时间", 1.15, 1.53], ["早", 1.53, 2.03], ["上", 2.03, 2.37], ["九", 2.37, 2.75]] |
+| Whisper large-v3-turbo int8 (faster-whisper) | 开放时间早上九点至下午五点。 | - | 0.5x | 12 word times | [["开", 0.37, 0.89], ["放", 0.89, 1.15], ["时间", 1.15, 1.61], ["早", 1.61, 2.01], ["上", 2.01, 2.43], ["九", 2.43, 2.73]] |
 
 ## SenseVoice test recording yue.wav (human)
 
 | Engine | Text | Simplified CER | Speed (x real time) | Timings | First timings |
 | --- | --- | --- | --- | --- | --- |
-| SenseVoice-Small int8 (sherpa-onnx) | 呢几个字都表达唔到我想讲嘅意思 | - | 9.7x | 15 token times | [["呢", 0.78], ["几", 1.08], ["个", 1.26], ["字", 1.44], ["都", 1.68], ["表", 1.98]] |
-| Whisper small int8 (faster-whisper) | failed: TypeError: open() got an unexpected keyword argument 'metadata_errors' | | | | |
-| Whisper large-v3-turbo int8 (faster-whisper) | failed: TypeError: open() got an unexpected keyword argument 'metadata_errors' | | | | |
+| SenseVoice 2024-07-17-int8-android-aarch64, language zh | failed: StopIteration:  | | | | |
+| SenseVoice 2024-07-17-int8-android-aarch64, language auto | failed: StopIteration:  | | | | |
+| SenseVoice 2024-07-17-int8-linux-x64, language zh | failed: StopIteration:  | | | | |
+| SenseVoice 2024-07-17-int8-linux-x64, language auto | failed: StopIteration:  | | | | |
+| SenseVoice 2025-09-09-int8-android-aarch64, language zh | failed: StopIteration:  | | | | |
+| SenseVoice 2025-09-09-int8-android-aarch64, language auto | failed: StopIteration:  | | | | |
+| SenseVoice 2025-09-09-int8-linux-x64, language zh | failed: StopIteration:  | | | | |
+| SenseVoice 2025-09-09-int8-linux-x64, language auto | failed: StopIteration:  | | | | |
+| SenseVoice int8-2024-07-17, language zh | 呢几个字都表达唔到我想讲嘅意思。 ⟶ punctuated (0.02 s): 呢几个字都表达唔到我想讲嘅意思。。 | - | 3.2x | 16 token times | [["呢", 0.78], ["几", 1.08], ["个", 1.32], ["字", 1.44], ["都", 1.74], ["表", 1.98]] |
+| SenseVoice int8-2024-07-17, language auto | 呢几个字都表达唔到我想讲嘅意思。 | - | 6.3x | 16 token times | [["呢", 0.78], ["几", 1.08], ["个", 1.32], ["字", 1.44], ["都", 1.74], ["表", 1.98]] |
+| SenseVoice int8-2025-09-09, language zh | 呢几个字都表达唔到我想讲嘅意思 ⟶ punctuated (0.01 s): 呢几个字都表达唔到我想讲嘅意思。 | - | 8.2x | 15 token times | [["呢", 0.78], ["几", 1.08], ["个", 1.26], ["字", 1.44], ["都", 1.68], ["表", 1.98]] |
+| SenseVoice int8-2025-09-09, language auto | 呢几个字都表达唔到我想讲嘅意思 | - | 5.7x | 15 token times | [["呢", 0.78], ["几", 1.08], ["个", 1.26], ["字", 1.44], ["都", 1.68], ["表", 1.98]] |
+| Whisper small int8 (faster-whisper) | 这几个字都表达不了我想说的意思。 | - | 1.5x | 12 word times | [["这", 0.56, 1.08], ["几", 1.08, 1.28], ["个", 1.28, 1.4], ["字", 1.4, 1.62], ["都", 1.62, 1.82], ["表", 1.82, 2.08]] |
+| Whisper large-v3-turbo int8 (faster-whisper) | 这几个字都表达不了我想说的意思。 | - | 0.4x | 12 word times | [["这", 0.56, 1.06], ["几", 1.06, 1.28], ["个", 1.28, 1.38], ["字", 1.38, 1.6], ["都", 1.6, 1.82], ["表", 1.82, 2.08]] |
 
 ## SenseVoice test recording en.wav (human)
 
 | Engine | Text | Simplified CER | Speed (x real time) | Timings | First timings |
 | --- | --- | --- | --- | --- | --- |
-| SenseVoice-Small int8 (sherpa-onnx) | THE TRIVBAL CHIEF THIN CALLED FOR THE BOY AND PRESENTED HIM WITH FIFTY PIECES OF COOD | - | 10.2x | 66 token times | [["T", 0.84], ["H", 0.9], ["E", 1.02], [" T", 1.14], ["R", 1.2], ["I", 1.26]] |
-| Whisper small int8 (faster-whisper) | failed: TypeError: open() got an unexpected keyword argument 'metadata_errors' | | | | |
-| Whisper large-v3-turbo int8 (faster-whisper) | failed: TypeError: open() got an unexpected keyword argument 'metadata_errors' | | | | |
+| SenseVoice 2024-07-17-int8-android-aarch64, language zh | failed: StopIteration:  | | | | |
+| SenseVoice 2024-07-17-int8-android-aarch64, language auto | failed: StopIteration:  | | | | |
+| SenseVoice 2024-07-17-int8-linux-x64, language zh | failed: StopIteration:  | | | | |
+| SenseVoice 2024-07-17-int8-linux-x64, language auto | failed: StopIteration:  | | | | |
+| SenseVoice 2025-09-09-int8-android-aarch64, language zh | failed: StopIteration:  | | | | |
+| SenseVoice 2025-09-09-int8-android-aarch64, language auto | failed: StopIteration:  | | | | |
+| SenseVoice 2025-09-09-int8-linux-x64, language zh | failed: StopIteration:  | | | | |
+| SenseVoice 2025-09-09-int8-linux-x64, language auto | failed: StopIteration:  | | | | |
+| SenseVoice int8-2024-07-17, language zh | The tribal chieftain called for the boy and presented him with 50 pieces of gold. ⟶ punctuated (0.04 s): The tribal chieftain called for the boy and presented him with 50 pieces of gold .。 | - | 8.0x | 20 token times | [["The", 0.9], [" tri", 1.32], ["bal", 1.56], [" chief", 1.86], ["tain", 2.22], [" called", 2.46]] |
+| SenseVoice int8-2024-07-17, language auto | The tribal chieftain called for the boy and presented him with 50 pieces of code. | - | 6.7x | 20 token times | [["The", 0.9], [" tri", 1.32], ["bal", 1.56], [" chief", 1.86], ["tain", 2.22], [" called", 2.46]] |
+| SenseVoice int8-2025-09-09, language zh | THE TRIVBAL CHIEF THIN CALLED FOR THE BOY AND PRESENTED HIM WITH FIFTY PIECES OF COOD ⟶ punctuated (0.01 s): THE TRIVBAL CHIEF THIN CALLED FOR THE BOY AND PRESENTED HIM WITH FIFTY PIECES OF COOD。 | - | 5.7x | 66 token times | [["T", 0.84], ["H", 0.9], ["E", 1.02], [" T", 1.14], ["R", 1.2], ["I", 1.26]] |
+| SenseVoice int8-2025-09-09, language auto | THE TRIVBAL CHIEF THIN CALLED FOR THE BOY AND PRESENTED HIM WITH FIFTY PIECES OF COOD | - | 3.0x | 66 token times | [["T", 0.84], ["H", 0.9], ["E", 1.02], [" T", 1.14], ["R", 1.2], ["I", 1.26]] |
+| Whisper small int8 (faster-whisper) | 他叫了一位老师兄弟,给他送了一块冰淇淋的冰淇淋。 | - | 0.3x | 22 word times | [["他", 0.72, 1.24], ["叫", 1.24, 1.96], ["了", 1.96, 1.96], ["一", 1.96, 1.96], ["位", 1.96, 2.08], ["老", 2.08, 2.08]] |
+| Whisper large-v3-turbo int8 (faster-whisper) | The tribal chieftain called for the boy and presented him with 50 pieces of gold. | - | 0.6x | 18 word times | [[" The", 0.72, 1.18], [" tribal", 1.18, 1.6], [" ch", 1.6, 1.92], ["ie", 1.92, 2.06], ["ft", 2.06, 2.14], ["ain", 2.14, 2.32]] |
+
+## All SenseVoice token times (language zh)
+
+**int8-2024-07-17 kokoro-zh-16k.wav**
+
+```
+[["蜂", 0.18], ["蜜", 0.3], ["永", 0.6], ["远", 0.78], ["不", 0.96], ["会", 1.14], ["变", 1.38], ["质", 1.56], ["。", 1.8], ["考", 2.16], ["古", 2.34], ["学", 2.58], ["家", 2.7], ["在", 3.0], ["埃", 3.3], ["及", 3.48], ["古", 3.72], ["墓", 3.9], ["中", 4.08], ["发", 4.44], ["现", 4.68], ["了", 4.86], ["3", 5.1], ["0", 5.16], ["0", 5.34], ["0", 5.46], ["年", 5.58], ["前", 5.7], ["的", 5.88], ["蜂", 6.06], ["蜜", 6.24], ["，", 6.48], ["至", 6.72], ["今", 6.9], ["仍", 7.2], ["然", 7.38], ["可", 7.68], ["以", 7.86], ["食", 8.04], ["用", 8.22], ["。", 8.4], ["章", 8.94], ["鱼", 9.18], ["有", 9.36], ["3", 9.6], ["颗", 9.84], ["心", 10.14], ["脏", 10.26], ["，", 10.5], ["其", 10.74], ["中", 10.98], ["两", 11.22], ["颗", 11.4], ["在", 11.7], ["它", 11.82], ["游", 12.12], ["泳", 12.3], ["的", 12.48], ["时", 12.6], ["候", 12.78], ["会", 13.2], ["停", 13.62], ["止", 13.8], ["跳", 14.04], ["动", 14.22], ["。", 14.46], ["金", 15.06], ["星", 15.24], ["上", 15.42], ["的", 15.6], ["一", 15.84], ["天", 16.02], ["比", 16.26], ["它", 16.38], ["的", 16.62], ["一", 16.86], ["年", 16.98], ["还", 17.22], ["要", 17.4], ["长", 17.64], ["。", 17.88], ["竹", 18.36], ["子", 18.54], ["是", 18.78], ["世", 19.02], ["界", 19.2], ["上", 19.44], ["生", 19.8], ["长", 19.98], ["最", 20.22], ["快", 20.4], ["的", 20.64], ["植", 20.82], ["物", 20.94], ["之", 21.18], ["一", 21.36], ["，", 21.54], ["有", 21.84], ["些", 22.02], ["品", 22.44], ["种", 22.56], ["一", 22.86], ["天", 22.98], ["可", 23.4], ["以", 23.52], ["长", 23.82], ["进", 24.0], ["一", 24.24], ["米", 24.42], ["。", 24.66], ["这", 25.02], ["种", 25.26], ["水", 25.5], ["母", 25.68], ["可", 25.92], ["以", 26.04], ["长", 26.34], ["生", 26.46], ["不", 26.7], ["老", 26.88], ["，", 27.06], ["它", 27.18], ["受", 27.54], ["伤", 27.72], ["以", 28.02], ["后", 28.14], ["会", 28.5], ["变", 28.8], ["回", 29.04], ["水", 29.28], ["溪", 29.58], ["重", 30.0], ["新", 30.18], ["开", 30.54], ["始", 30.72], ["生", 30.96], ["命", 31.14], ["。", 31.38], ["那", 31.86], ["么", 32.1], ["接", 32.28], ["下", 32.46], ["来", 32.64], ["会", 32.94], ["发", 33.24], ["生", 33.48], ["什", 33.66], ["么", 33.9], ["呢", 34.08], ["？", 34.26], ["我", 34.44], ["们", 34.62], ["一", 34.86], ["起", 34.98], ["去", 35.22], ["看", 35.52], ["看", 35.76], ["吧", 36.0], ["。", 36.6]]
+```
+
+**int8-2025-09-09 kokoro-zh-16k.wav**
+
+```
+[["蜂", 0.12], ["蜜", 0.3], ["永", 0.6], ["远", 0.78], ["不", 0.96], ["会", 1.14], ["变", 1.32], ["质", 1.5], ["考", 2.1], ["古", 2.28], ["学", 2.52], ["家", 2.7], ["在", 3.0], ["埃", 3.24], ["及", 3.42], ["古", 3.66], ["墓", 3.9], ["中", 4.08], ["发", 4.44], ["现", 4.68], ["了", 4.86], ["三", 5.04], ["千", 5.28], ["年", 5.52], ["前", 5.7], ["的", 5.82], ["蜂", 6.0], ["蜜", 6.18], ["至", 6.6], ["今", 6.9], ["仍", 7.2], ["然", 7.38], ["可", 7.62], ["以", 7.8], ["食", 8.04], ["用", 8.22], ["章", 8.82], ["鱼", 9.06], ["有", 9.36], ["三", 9.54], ["颗", 9.78], ["心", 10.02], ["脏", 10.26], ["其", 10.74], ["中", 10.98], ["两", 11.16], ["颗", 11.34], ["在", 11.64], ["它", 11.82], ["游", 12.06], ["泳", 12.24], ["的", 12.42], ["时", 12.6], ["候", 12.78], ["会", 13.14], ["停", 13.56], ["止", 13.74], ["跳", 14.04], ["动", 14.22], ["金", 14.82], ["星", 15.12], ["上", 15.42], ["的", 15.6], ["一", 15.78], ["天", 15.96], ["比", 16.2], ["它", 16.38], ["的", 16.62], ["一", 16.74], ["年", 16.92], ["还", 17.16], ["要", 17.4], ["长", 17.64], ["竹", 18.3], ["子", 18.54], ["是", 18.78], ["世", 19.02], ["界", 19.2], ["上", 19.44], ["生", 19.68], ["长", 19.86], ["最", 20.16], ["快", 20.34], ["的", 20.58], ["植", 20.76], ["物", 20.94], ["之", 21.18], ["一", 21.3], ["有", 21.84], ["些", 22.02], ["品", 22.32], ["种", 22.56], ["一", 22.8], ["天", 22.92], ["可", 23.34], ["以", 23.52], ["长", 23.7], ["进", 23.94], ["一", 24.18], ["米", 24.36], ["这", 25.02], ["种", 25.26], ["水", 25.44], ["母", 25.68], ["可", 25.92], ["以", 26.04], ["长", 26.22], ["生", 26.4], ["不", 26.64], ["老", 26.82], ["它", 27.18], ["受", 27.48], ["伤", 27.72], ["以", 28.02], ["后", 28.14], ["会", 28.5], ["变", 28.8], ["回", 29.04], ["水", 29.22], ["溪", 29.46], ["重", 29.94], ["新", 30.12], ["开", 30.48], ["始", 30.66], ["生", 30.9], ["命", 31.14], ["那", 31.86], ["么", 32.04], ["接", 32.28], ["下", 32.46], ["来", 32.64], ["会", 32.94], ["发", 33.24], ["生", 33.48], ["什", 33.66], ["么", 33.9], ["呢", 34.08], ["我", 34.44], ["们", 34.62], ["一", 34.86], ["起", 34.98], ["去", 35.22], ["看", 35.46], ["看", 35.76], ["吧", 36.0]]
+```
+
+**int8-2024-07-17 zh-16k.wav**
+
+```
+[["开", 0.72], ["饭", 0.96], ["时", 1.26], ["间", 1.5], ["早", 1.92], ["上", 2.1], ["9", 2.58], ["点", 2.82], ["至", 3.3], ["下", 3.9], ["午", 4.26], ["5", 4.62], ["点", 4.8], ["。", 5.52]]
+```
+
+**int8-2025-09-09 zh-16k.wav**
+
+```
+[["放", 0.9], ["时", 1.26], ["间", 1.5], ["早", 1.86], ["上", 2.1], ["九", 2.52], ["点", 2.82], ["至", 3.24], ["下", 3.9], ["午", 4.2], ["五", 4.56], ["点", 4.8]]
+```
+
+**int8-2024-07-17 yue-16k.wav**
+
+```
+[["呢", 0.78], ["几", 1.08], ["个", 1.32], ["字", 1.44], ["都", 1.74], ["表", 1.98], ["达", 2.16], ["唔", 2.4], ["到", 2.52], ["我", 2.76], ["想", 2.88], ["讲", 3.12], ["嘅", 3.36], ["意", 3.54], ["思", 3.72], ["。", 5.1]]
+```
+
+**int8-2025-09-09 yue-16k.wav**
+
+```
+[["呢", 0.78], ["几", 1.08], ["个", 1.26], ["字", 1.44], ["都", 1.68], ["表", 1.98], ["达", 2.16], ["唔", 2.4], ["到", 2.52], ["我", 2.76], ["想", 2.94], ["讲", 3.12], ["嘅", 3.36], ["意", 3.54], ["思", 3.66]]
+```
+
+**int8-2024-07-17 en-16k.wav**
+
+```
+[["The", 0.9], [" tri", 1.32], ["bal", 1.56], [" chief", 1.86], ["tain", 2.22], [" called", 2.46], [" for", 2.76], [" the", 3.0], [" boy", 3.12], [" and", 3.66], [" presented", 3.96], [" him", 4.56], [" with", 4.8], [" ", 4.98], ["5", 5.16], ["0", 5.34], [" pieces", 5.52], [" of", 5.94], [" gold", 6.24], [".", 7.08]]
+```
+
+**int8-2025-09-09 en-16k.wav**
+
+```
+[["T", 0.84], ["H", 0.9], ["E", 1.02], [" T", 1.14], ["R", 1.2], ["I", 1.26], ["V", 1.38], ["B", 1.44], ["A", 1.5], ["L", 1.56], [" C", 1.74], ["H", 1.8], ["I", 1.86], ["E", 1.92], ["F", 2.04], [" T", 2.16], ["H", 2.22], ["I", 2.28], ["N", 2.34], [" CA", 2.46], ["L", 2.52], ["L", 2.64], ["E", 2.76], ["D", 2.82], [" F", 2.88], ["O", 2.94], ["R", 3.06], [" T", 3.12], ["H", 3.18], ["E", 3.24], [" B", 3.3], ["O", 3.36], ["Y", 3.48], [" A", 3.6], ["N", 3.66], ["D", 3.72], [" PR", 3.84], ["E", 3.96], ["S", 4.02], ["E", 4.14], ["N", 4.2], ["T", 4.32], ["E", 4.44], ["D", 4.5], [" H", 4.56], ["I", 4.62], ["M", 4.68], [" W", 4.8], ["I", 4.86], ["T", 4.98], ["H", 5.04], [" F", 5.16], ["I", 5.22], ["F", 5.28], ["T", 5.34], ["Y", 5.46], [" P", 5.58], ["I", 5.64], ["EC", 5.76], ["E", 5.88], ["S", 6.0], [" O", 6.12], ["F", 6.18], [" CO", 6.3], ["O", 6.48], ["D", 6.6]]
+```
 
