@@ -57,6 +57,8 @@ def test_chinese_and_burmese_wrap_inside_the_frame(lang, text):
     font = fonts.for_language(lang)
     if not fonts.covers(font, lang):
         pytest.skip(f"no {lang} font on this machine")
+    if not render.can_draw(text):
+        pytest.skip(f"no text shaping (raqm) for {lang} on this machine")
     style = {**render.DEFAULT_STYLE, "font": font, "uppercase": False, "width": 70}
     image, (x, _) = render.caption_image(text, style, 1080, 1920)
     assert image.width <= 1080 * 0.7 + 4 and x > 0 and image.height > 2 * 84
