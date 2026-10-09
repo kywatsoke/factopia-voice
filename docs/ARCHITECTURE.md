@@ -42,7 +42,8 @@ and Windows; nothing is written per platform except the two small launchers.
 
 ## Translation (2.2)
 
-- `languages.py` holds what differs between English, Chinese and Burmese:
+- `languages.py` holds what differs between English, Chinese and Burmese
+  captions, and which languages are translated (English and Chinese, from 3.0):
   detection, how words join, sentence and clause marks, and where a line may
   break (words, characters, Burmese syllables).
 - `translate/llamacpp.py` (3.0) implements the Translator contract with

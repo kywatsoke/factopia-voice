@@ -8,7 +8,7 @@ YouTube channel and shared with friends.
 | --- | --- |
 | **Studio** | Paste a script, get a voiceover (MP3 or WAV) in a natural English voice, "Michael". |
 | **Captions** | Import a video or audio file; speech becomes timed caption lines you can edit, style with any installed font, and export as a subtitle file (SRT) or burned into the video. |
-| **Translate** | English, Chinese and Burmese in every direction, for text, caption tracks and SRT files. |
+| **Translate** | English and Chinese, either way, for text, caption tracks and SRT files. |
 | **Library** | Every clip you made, with its script. Play, reuse, caption. |
 | **Pronunciation** | Fix how a word is said once; every later clip uses the fix. |
 | **Settings** | Translation, performance, storage, updates, about and licences. |
@@ -72,8 +72,8 @@ the recognised timings. Edit, split and join lines, pick a font and style,
 then export an SRT file or a captioned copy of the video. Speech recognition
 is English only for now.
 
-**Translate.** Paste text, pick the languages (or let the app detect the
-source) and press Translate. In Captions, **Translate captions** makes a new
+**Translate.** English and Chinese, either way. Paste text, pick the
+languages (or let the app detect the source) and press Translate. In Captions, **Translate captions** makes a new
 project in the other language with the same timings; the original stays as
 it was. You can also load an SRT subtitle file to translate it.
 

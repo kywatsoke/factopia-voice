@@ -57,7 +57,7 @@ def test_translation_is_refused_until_translation_is_set_up(studio, monkeypatch)
     from factopia_voice.translate import ollama
     monkeypatch.setattr(ollama, "BASE", "http://127.0.0.1:9")
     with pytest.raises(ValueError, match="Set up translation"):
-        studio.generate("hello there", target_language="my")
+        studio.generate("hello there", target_language="zh")
 
 
 def test_not_ready_is_reported(studio):

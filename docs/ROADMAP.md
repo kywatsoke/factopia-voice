@@ -13,7 +13,7 @@ This file is a snapshot of it for the repository, taken 9 October 2026
 | 2.1 Captions | Speech to text, caption editor, styling, SRT and burned-in export | A 60-second video is captioned and exported in one sitting | Done (Mac, 7 Oct 2026) |
 | 2.2 Translate | English, Chinese and Burmese in every direction; caption translation; SRT import | Real translations run on the Mac and the Burmese and Chinese are judged good enough | Built; real-model test pending |
 | Later: Reader | On-screen caption reader (OCR) | When wanted | Postponed |
-| 3.0 Easy install | `.dmg` for Apple silicon Macs and `Setup.exe` for Windows 10+; own window; translation built in (no Ollama); models downloaded in the app without sign-in; welcome screen with the model terms; Storage, Performance, Updates, About; FriBiDi for Burmese | You and a friend install it without help on a Mac and a Windows PC | Beta built and checked on GitHub's Mac and Windows machines; your Mac and a Windows PC next |
+| 3.0 Easy install | `.dmg` for Apple silicon Macs and `Setup.exe` for Windows 10+; own window; English–Chinese translation built in (no Ollama); models downloaded in the app without sign-in; welcome screen with the model terms; Storage, Performance, Updates, About; FriBiDi for Burmese | You and a friend install it without help on a Mac and a Windows PC | Beta built and checked on GitHub's Mac and Windows machines; your Mac and a Windows PC next |
 
 ## Backlog
 
@@ -22,11 +22,11 @@ This file is a snapshot of it for the repository, taken 9 October 2026
 | Run on Windows | 3.0 | Open: the installer is built, installed and self-tested on GitHub's Windows machines; nobody has used it by hand yet |
 | Real-model translation test on the Mac | 3.0 | Open: run on GitHub instead on 9 Oct 2026; the Mac run is part of the beta check |
 | Burmese burned-in captions on Mac and Windows: supply FriBiDi so Pillow can shape Burmese | 3.0 | Done: bundled; raqm on in the packed Mac app |
-| Judge Burmese and Chinese output; choose 4B or 12B | 3.0 | Open: 4B Burmese measured poor on 9 Oct 2026; 12B sample running |
+| Judge Burmese and Chinese output; choose 4B or 12B | 3.0 | Done 9 Oct 2026: Chinese good, Burmese not usable with either; Burmese translation removed, 4B stays |
 | Voice tone improvement (rated about 60%) | Next | Not started |
 | Rename the app (it is more than a voice now) | Next | Not started |
 | Voice picker and more voices (Kokoro has 54) | Later | Later |
-| Burmese voice | Later | No commercially usable offline voice found |
+| Burmese voice, natural and not robotic | Later | Wanted (9 Oct 2026); no offline voice with a licence for a monetised channel found yet; Microsoft's online Burmese neural voices to test |
 | Short assembler: voiceover, clips and captions into one vertical video | Later | Later |
 | Footage library with a licence log (Pexels, Pixabay, NASA) | Later | Later |
 | Channel tracker on YouTube's analytics API | Later | Later |

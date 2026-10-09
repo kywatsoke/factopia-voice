@@ -15,11 +15,16 @@
 
   function fill() {
     if (X.filled || !S || !S.languages) return;
-    const opts = Object.entries(S.languages).map(([k, v]) => el("option", { value: k, textContent: v.native === v.name ? v.name : `${v.name}  ${v.native}` }));
+    const codes = S.translation_languages || ["en", "zh"];
+    const opts = codes.map(k => { const v = S.languages[k]; return el("option", { value: k, textContent: v.native === v.name ? v.name : `${v.name}  ${v.native}` }); });
     $("trFrom").append(...opts.map(o => o.cloneNode(true)));
     $("trTo").append(...opts.map(o => o.cloneNode(true)));
-    $("trTo").value = "my";
-    try { const saved = JSON.parse(localStorage.getItem("fv-tr") || "{}"); if (saved.from) $("trFrom").value = saved.from; if (saved.to) $("trTo").value = saved.to; } catch {}
+    $("trTo").value = "zh";
+    try {
+      const saved = JSON.parse(localStorage.getItem("fv-tr") || "{}");
+      if (saved.from && (saved.from === "auto" || codes.includes(saved.from))) $("trFrom").value = saved.from;
+      if (saved.to && codes.includes(saved.to)) $("trTo").value = saved.to;
+    } catch {}
     if (window.fillTranslation) window.fillTranslation();
     X.filled = true; updateStudioButton();
   }

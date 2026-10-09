@@ -11,7 +11,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-from ..languages import valid
+from ..languages import check_translation, valid
 from .base import Translator, clean_output, prompt_for
 from ..net import open_url
 
@@ -116,6 +116,7 @@ class OllamaTranslator(Translator):
         source, target = valid(source), valid(target)
         if source == target or not text.strip():
             return text
+        check_translation(source, target)
         prompt = prompt_for(text, source, target)
         body = {"model": self.model, "messages": [{"role": "user", "content": prompt}], "stream": False,
                 "keep_alive": "15m", "options": {"temperature": 0, "num_predict": max(256, len(text) * 6)}}

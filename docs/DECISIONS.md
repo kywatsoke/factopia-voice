@@ -4,6 +4,18 @@ Each entry records what was chosen, why, and what it costs. Newest first.
 Add an entry whenever an engine, a licence or the shape of the app changes,
 so a later change can be judged against the reason for the first.
 
+## 2026-10-09 · Translation: English and Chinese only
+
+- **Chosen:** translation between English and Chinese, either way. Burmese
+  translation is removed from the Translate screen, caption translation and
+  the engines; Burmese captions (SRT import, editing, styling, burn-in)
+  stay.
+- **Why:** real samples from TranslateGemma 4B and 12B gave wrong key words
+  and stray words from other languages in Burmese, while Chinese was good.
+  The user, who reads Burmese, judged it not usable.
+- **Next for Burmese:** a natural, non-robotic Burmese voice is wanted
+  (decided the same day); no suitable offline voice is known yet.
+
 ## 2026-10-09 · 3.0: installers for people who are not technical
 
 - **Chosen:** the same Python app packed with PyInstaller into a Mac `.app`

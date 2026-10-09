@@ -1,5 +1,7 @@
-"""The three languages Factopia Voice translates between, and the text rules
-that differ between them (spaces between words, sentence endings, line breaks)."""
+"""The caption languages (English, Chinese, Burmese) and the text rules that
+differ between them (spaces between words, sentence endings, line breaks).
+Translation covers English and Chinese only: Burmese output from the
+translation model was not good enough (decided 9 October 2026)."""
 import re
 
 LANGUAGES = {
@@ -7,6 +9,8 @@ LANGUAGES = {
     "zh": {"name": "Chinese", "native": "中文", "code": "zh-Hans", "max_chars": 16, "joiner": ""},
     "my": {"name": "Burmese", "native": "မြန်မာ", "code": "my", "max_chars": 36, "joiner": " "},
 }
+TRANSLATION = ("en", "zh")
+NOT_TRANSLATED = "Translation works between English and Chinese."
 SENTENCE_END = ".!?…。！？။"          # . ! ? … 。 ！ ？ ။
 CLAUSE_MARKS = ",;:，、；：၊"           # , ; : ， 、 ； ： ၊
 _HAN = re.compile(r"[㐀-鿿豈-﫿]")
@@ -23,6 +27,12 @@ def detect(text):
 
 def valid(code):
     return code if code in LANGUAGES else "en"
+
+
+def check_translation(source, target):
+    """Refuse a translation that does not go between English and Chinese."""
+    if source not in TRANSLATION or target not in TRANSLATION:
+        raise ValueError(NOT_TRANSLATED)
 
 
 def join(parts, lang):

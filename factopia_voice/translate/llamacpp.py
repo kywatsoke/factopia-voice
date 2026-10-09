@@ -22,7 +22,7 @@ from pathlib import Path
 
 from ..config import LOGS, MODELS, profile_store
 from ..downloads import fetch_one
-from ..languages import valid
+from ..languages import check_translation, valid
 from .base import Translator, clean_output, prompt_for
 from ..net import open_url
 
@@ -320,6 +320,7 @@ class BuiltinTranslator(Translator):
         source, target = valid(source), valid(target)
         if source == target or not text.strip():
             return text
+        check_translation(source, target)
         if not self.installed():
             raise ValueError("Set up translation first.")
         allow_gpu = profile_store.load().get("acceleration", "auto") != "off"

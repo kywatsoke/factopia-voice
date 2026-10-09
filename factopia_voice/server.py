@@ -41,6 +41,7 @@ def state():
         "shell": shell.MODE, "platform": sys.platform, "welcome": not profile.get("terms_accepted"),
         "dictionary": dictionary_store.load(), "library": library.items(),
         "languages": {k: {"name": v["name"], "native": v["native"]} for k, v in languages.LANGUAGES.items()},
+        "translation_languages": list(languages.TRANSLATION),
         "translation": {"engine": choice, "setting": profile.get("translation_engine", "auto"), "engines": ENGINES,
                         "qualities": qualities(choice)},
         "translation_qualities": qualities(choice),

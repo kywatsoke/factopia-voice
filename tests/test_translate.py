@@ -72,11 +72,11 @@ def test_setup_downloads_the_model_then_translates_with_the_official_prompt(fake
     seen = []
     t.setup(lambda pct, detail=None: seen.append(pct))
     assert t.status()["ready"] and max(p for p in seen if p is not None) == 100
-    out = t.translate("Honey never spoils.", "en", "my")
+    out = t.translate("Honey never spoils.", "en", "zh")
     assert out == "[translategemma:4b] Honey never spoils."            # quotes and trailing newline removed
     prompt = fake_ollama.prompts[-1]
-    assert prompt.startswith("You are a professional English (en) to Burmese (my) translator.")
-    assert prompt.endswith("Please translate the following English text into Burmese:\n\n\nHoney never spoils.")
+    assert prompt.startswith("You are a professional English (en) to Chinese (zh-Hans) translator.")
+    assert prompt.endswith("Please translate the following English text into Chinese:\n\n\nHoney never spoils.")
     assert t.translate("same", "en", "en") == "same" and len(fake_ollama.prompts) == 1
 
 
@@ -144,3 +144,18 @@ def test_projects_from_2_1_open_as_english(clean_data):
     path.write_text(json.dumps(data), encoding="utf-8")
     assert projects.load(p["id"])["language"] == "en"
     assert projects.update(p["id"], lines=[{"start": 0, "end": 1, "text": "Hi there"}])["language"] == "en"
+
+
+def test_burmese_is_not_translated(clean_data, monkeypatch):
+    from factopia_voice import languages, projects
+    monkeypatch.setattr(projects, "get_translator", lambda: FakeTranslator())
+    with pytest.raises(ValueError, match="English and Chinese"):
+        projects.start_translate_text("ပျားရည်သည် ဘယ်တော့မှ မပုပ်ပါ။", "auto", "en")
+    with pytest.raises(ValueError, match="English and Chinese"):
+        projects.start_translate_text("Honey never spoils.", "en", "my")
+    srt = "1\n00:00:00,000 --> 00:00:01,000\nပျားရည်သည် ဘယ်တော့မှ မပုပ်ပါ။\n"
+    burmese = projects.import_srt(srt, "honey-my.srt")              # Burmese captions still work
+    assert burmese["language"] == "my"
+    with pytest.raises(ValueError, match="English and Chinese"):
+        projects.start_translate(burmese["id"], "en")
+    assert languages.TRANSLATION == ("en", "zh")

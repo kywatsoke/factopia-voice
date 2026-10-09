@@ -5,7 +5,7 @@ run on the release zip before a version is called done.
 
 ## Automated tests
 
-75 tests, run with pytest (command in [DEVELOPMENT.md](DEVELOPMENT.md)).
+76 tests, run with pytest (command in [DEVELOPMENT.md](DEVELOPMENT.md)).
 
 | File | Covers |
 | --- | --- |
@@ -16,7 +16,7 @@ run on the release zip before a version is called done.
 | `test_captions.py` | Word timing, line grouping, alignment to a script, tidying, SRT format |
 | `test_render.py` | Fonts and letter coverage, caption drawing and wrapping (Chinese and Burmese too), video burn-in |
 | `test_languages.py` | Language detection, Burmese syllables, SRT reading, sentence and clause splitting |
-| `test_translate.py` | The Ollama translator against a fake Ollama: setup, official prompt, quality choice, caption and text translation, 2.1 projects |
+| `test_translate.py` | The Ollama translator against a fake Ollama: setup, official prompt, quality choice, caption and text translation, Burmese refused, 2.1 projects |
 | `test_builtin_translator.py` | The built-in engine against a fake llama-server: download step, official prompt, graphics chip first, processor fallback at start and during translation, idle stop, the engine ending with the app, downloads that resume and are checked |
 | `test_storage.py` | Bringing in 2.x work without replacing newer files |
 
@@ -71,9 +71,12 @@ Voice. Note the date, machine and result in the verification record.
 - [ ] The first translation offers the 2.5 GB download, which continues after
       a broken connection and reports ready.
 - [ ] Settings > Performance names the graphics chip or card while translating.
-- [ ] English to Chinese, English to Burmese and back give readable text.
-- [ ] Translate captions makes a new project; Burmese lines are shaped
-      correctly (vowel signs in place) in the preview and the burned-in video.
+- [ ] English to Chinese and back give readable text; Burmese text is
+      refused with a clear message.
+- [ ] Translate captions makes a Chinese copy of English captions (and the
+      reverse) with the same timings.
+- [ ] A Burmese SRT imports; its lines are shaped correctly (vowel signs in
+      place) in the preview and the burned-in video; no Translate panel shows.
 - [ ] An SRT file loads and translates.
 
 **Settings**

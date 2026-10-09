@@ -51,16 +51,16 @@ def test_missing_engine_is_explained(builtin, monkeypatch):
 def test_translates_with_the_official_prompt_on_the_graphics_chip(builtin):
     t, log = builtin
     t.path.write_bytes(b"model")
-    assert t.translate("Honey never spoils.", "en", "my") == "[Burmese] Honey never spoils."
+    assert t.translate("Honey never spoils.", "en", "zh") == "[Chinese] Honey never spoils."
     assert t.translate("same", "en", "en") == "same"
     entries = log_lines(log)
     launch = next(e["args"] for e in entries if "args" in e)
     prompt = next(e["prompt"] for e in entries if "prompt" in e)
     assert launch[launch.index("-ngl") + 1] == "99" and "--device" not in launch
-    assert prompt.startswith("<start_of_turn>user\nYou are a professional English (en) to Burmese (my) translator.")
+    assert prompt.startswith("<start_of_turn>user\nYou are a professional English (en) to Chinese (zh-Hans) translator.")
     assert prompt.endswith("<end_of_turn>\n<start_of_turn>model\n")
     assert llamacpp.SERVER.mode == "gpu" and "Fake GPU" in t.status()["message"]
-    t.translate("again", "en", "my")
+    t.translate("again", "en", "zh")
     assert len([e for e in log_lines(log) if "args" in e]) == 1          # the engine stays loaded
 
 

@@ -102,6 +102,8 @@ class Studio:
         voice = self.engine.voice(profile["voice"])
         spoken = script
         if target_language and target_language != voice.language:
+            from .languages import check_translation
+            check_translation(voice.language[:2], target_language)
             translator = get_translator()
             if not translator.status()["ready"]:
                 raise ValueError("Set up translation first.")

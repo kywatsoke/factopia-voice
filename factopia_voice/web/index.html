@@ -125,7 +125,7 @@ Leave a blank line for a short pause, or write [pause 0.8] for an exact one."></
               <label class="field"><span>Widest line</span><output id="stWidthOut"></output><input type="range" id="stWidth" min="40" max="100" step="5"></label>
               <div class="field"><span>ALL CAPITALS</span><input type="checkbox" id="stUpper"></div>
             </div>
-            <div class="card">
+            <div class="card" id="capTrCard">
               <div class="label">Translate captions</div>
               <p class="muted small-gap">Makes a translated copy with the same timings. This project stays as it is.</p>
               <div class="pair-row"><select id="capTarget" aria-label="Translate into"></select><button class="btn" id="capTranslate">Translate</button></div>
@@ -147,7 +147,7 @@ Leave a blank line for a short pause, or write [pause 0.8] for an exact one."></
 
     <!-- Translate -->
     <section id="view-translate" class="view">
-      <header><h1>Translate</h1><p>English, Chinese and Burmese, in any direction, on this computer.</p></header>
+      <header><h1>Translate</h1><p>English and Chinese, either way, on this computer.</p></header>
       <div class="card tr-setup" id="trSetup">
         <div class="tr-setup-row"><span class="dot" id="trDot"></span><span id="trStatus">Checking translation</span></div>
         <div class="row" id="trSetupActions" hidden>

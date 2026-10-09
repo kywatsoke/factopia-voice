@@ -211,6 +211,7 @@ def start_translate(project_id, target):
     target = languages.valid(target)
     if target == source:
         raise ValueError("These captions are already in " + languages.LANGUAGES[target]["name"] + ".")
+    languages.check_translation(source, target)
     if not project["lines"]:
         raise ValueError("There are no captions to translate yet.")
     translator = get_translator()
@@ -252,6 +253,9 @@ def start_translate_text(text, source, target):
     if len(text) > 20000:
         raise ValueError("That text is too long. Translate it in parts.")
     source = languages.detect(text) if source == "auto" else languages.valid(source)
+    target = languages.valid(target)
+    if source != target:
+        languages.check_translation(source, target)
     translator = get_translator()
     if not translator.status()["ready"]:
         raise ValueError("Set up translation first.")

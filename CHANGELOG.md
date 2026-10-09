@@ -17,6 +17,9 @@ technical. A test version, published as a pre-release.
   is also checked against its published checksum.
 - Translation is built in: TranslateGemma 4B runs on llama.cpp inside the
   app, downloaded without any sign-in. Ollama stays available as an option.
+- Translation now covers English and Chinese only. Burmese translation is
+  removed: its quality was not good enough with either model size. Burmese
+  captions still work (import an SRT, edit, style, export).
 - Burmese captions are drawn correctly on Mac and Windows: the app now
   carries the FriBiDi text-shaping library.
 - Speed: translation uses the Mac's graphics chip or a Windows graphics card

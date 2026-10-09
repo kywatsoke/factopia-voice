@@ -88,7 +88,8 @@
     if (!$("capLang").options.length && S && S.languages) {
       for (const [k, v] of Object.entries(S.languages)) {
         $("capLang").append(el("option", { value: k, textContent: v.name }));
-        $("capTarget").append(el("option", { value: k, textContent: v.native === v.name ? v.name : `${v.name}  ${v.native}` }));
+        if ((S.translation_languages || ["en", "zh"]).includes(k))
+          $("capTarget").append(el("option", { value: k, textContent: v.native === v.name ? v.name : `${v.name}  ${v.native}` }));
       }
     }
     say("capTrStatus", ""); bar("capTrBar", null);
@@ -105,8 +106,11 @@
     $("capScript").value = p.script || "";
     $("capExportVideo").hidden = !p.has_video;
     $("capLang").value = p.language || "en";
-    for (const o of $("capTarget").options) o.hidden = o.value === (p.language || "en");
-    if ($("capTarget").value === (p.language || "en")) $("capTarget").value = [...$("capTarget").options].find(o => !o.hidden).value;
+    const lang = p.language || "en", translatable = (S.translation_languages || ["en", "zh"]).includes(lang);
+    $("capTrCard").hidden = !translatable;                 // Burmese captions are not translated
+    for (const o of $("capTarget").options) o.hidden = o.value === lang;
+    const firstShown = [...$("capTarget").options].find(o => !o.hidden);
+    if (firstShown && $("capTarget").value === lang) $("capTarget").value = firstShown.value;
     for (const id of ["capLength", "capLengthLabel", "capRedo"]) $(id).hidden = !p.has_words;
     document.querySelectorAll("#capLength button").forEach(b => b.classList.toggle("on", b.dataset.v === p.length));
     const s = p.style;
