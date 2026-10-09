@@ -1,0 +1,50 @@
+# Runs the automated tests.
+#   Push to main:                  Linux and Windows
+#   Pull request, manual run, tag: Linux, Windows and macOS
+# macOS minutes count ten times against the free monthly allowance for
+# private repositories, so it runs only where it matters.
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  test:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ fromJSON(github.event_name == 'push' && github.ref_type == 'branch' && '["ubuntu-latest", "windows-latest"]' || '["ubuntu-latest", "windows-latest", "macos-latest"]') }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v10.2.0
+
+      - name: Show what this machine can draw
+        # Burmese and Chinese captions need Pillow's raqm text layout; print it
+        # so a platform without it is spotted early.
+        run: >
+          uv run --python 3.12 --no-project --with-requirements requirements.txt
+          python -c "import sys, PIL; from PIL import features as f; print(sys.version.split()[0], 'Pillow', PIL.__version__, 'raqm', f.check('raqm'), f.version('raqm'))"
+
+      - name: Run the tests
+        run: >
+          uv run --python 3.12 --no-project --with-requirements requirements.txt
+          --with-requirements requirements-dev.txt pytest -q -rs

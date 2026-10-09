@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Factopia Voice</title>
+<link rel="icon" href="/icon.svg">
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><img src="/icon.svg" alt="" width="30" height="30"><span>Factopia <b>Voice</b></span></div>
+    <nav id="nav">
+      <button data-view="studio" class="on"><svg viewBox="0 0 24 24"><path d="M12 3v12M8 7v4M16 6v6M4 10v2M20 9v4M6 19h12"/></svg><span>Studio</span></button>
+      <button data-view="captions"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M7 14h4M13 14h4M7 10.5h10"/></svg><span>Captions</span></button>
+      <button data-view="translate"><svg viewBox="0 0 24 24"><path d="M4 6h9M8.5 4v2M6 6c.5 3 2.5 5.5 5 7M11 6c-.6 3.4-3 6.4-6 8M13 20l4-9 4 9M14.5 17h5"/></svg><span>Translate</span></button>
+      <button data-view="library"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span>Library</span><i id="libCount"></i></button>
+      <button data-view="words"><svg viewBox="0 0 24 24"><path d="M5 19 10.5 5h1L17 19M7.3 14h7.4M19 9v10"/></svg><span>Pronunciation</span><i id="wordCount"></i></button>
+      <button data-view="settings"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg><span>Settings</span></button>
+    </nav>
+    <div class="side-foot"><span class="dot" id="dot"></span><span id="readyText">Starting</span></div>
+  </aside>
+
+  <main>
+    <!-- Studio -->
+    <section id="view-studio" class="view on">
+      <header><h1>New voiceover</h1><p>Paste a script and get a narration file. Everything runs on this computer.</p></header>
+      <div class="studio">
+        <div class="col">
+          <div class="card editor">
+            <textarea id="script" spellcheck="true" placeholder="Paste or type your script here.
+
+Leave a blank line for a short pause, or write [pause 0.8] for an exact one."></textarea>
+            <div class="editor-foot">
+              <div class="stats"><b id="words">0</b> words <span class="sep"></span> about <b id="secs">0</b> sec <span id="overNote"></span></div>
+              <div class="meter" title="Estimated length against your target"><div id="meterFill"></div></div>
+              <div class="target">target <span id="maxLabel">50</span>s</div>
+            </div>
+          </div>
+          <div class="card result" id="result" hidden>
+            <div class="result-head"><div class="label">Latest clip</div><div class="result-title" id="resTitle"></div><div class="result-meta" id="resMeta"></div></div>
+            <audio id="resAudio" controls preload="metadata"></audio>
+            <div class="row"><a class="btn primary" id="resDownload">Download</a><button class="btn" id="resFolder">Show in folder</button></div>
+          </div>
+        </div>
+        <div class="col panel">
+          <div class="card">
+            <div class="label">Channel voice</div>
+            <div class="voice">
+              <div class="avatar" id="vAvatar">M</div>
+              <div><div class="vname" id="vName">Loading</div><div class="vsub" id="vSub"></div></div>
+              <button class="btn small" id="vPreview" title="Hear this voice">Listen</button>
+            </div>
+            <label class="field"><span>Speed</span><output id="speedOut">1.00x</output>
+              <input type="range" id="speed" min="0.8" max="1.3" step="0.05" value="1"></label>
+            <label class="field"><span>Pause length</span><output id="pauseOut">0.35s</output>
+              <input type="range" id="pause" min="0" max="1.5" step="0.05" value="0.35"></label>
+            <div class="field"><span>File type</span>
+              <div class="seg" id="format"><button data-v="mp3" class="on">MP3</button><button data-v="wav">WAV</button></div></div>
+          </div>
+          <button class="btn primary big" id="go">Generate voiceover</button>
+          <div class="hint" id="status">Tip: press Ctrl or Cmd + Enter to generate.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Captions -->
+    <section id="view-captions" class="view">
+      <div id="capList">
+        <header><h1>Captions</h1><p>Turn the speech in a video or audio file into timed captions, style them, and export.</p></header>
+        <div class="card drop" id="capDrop">
+          <input type="file" id="capFile" hidden accept="video/*,audio/*,.mkv,.mov,.m4a,.srt">
+          <div class="drop-title">Drop a video or audio file here</div>
+          <div class="drop-sub">Video or audio (mp4, mov, mp3, wav) to caption, or a subtitle file (srt) to translate. Files stay on this computer.</div>
+          <button class="btn primary" id="capChoose">Choose a file</button>
+          <div class="bar" id="capUploadBar" hidden><div></div></div>
+          <div class="hint" id="capImportStatus"></div>
+        </div>
+        <div class="card list" id="capProjects"></div>
+      </div>
+      <div id="capEditor" hidden>
+        <header><h1 id="capName"></h1><p><span id="capMeta"></span> <label class="lang-pick">Language <select id="capLang"></select></label></p><button class="btn" id="capBack">All captions</button></header>
+        <div class="cap-grid">
+          <div class="col">
+            <div class="card" id="capStart">
+              <div class="label">Step 1</div>
+              <h2>Read the speech</h2>
+              <p class="muted">English speech is turned into timed lines on this computer. The first time, a speech model of about 480 MB is downloaded.</p>
+              <label class="stack"><span>Exact script (optional). Paste the words that are spoken and the captions will use them exactly.</span>
+                <textarea id="capScript" rows="4" placeholder="Leave empty to use what the recogniser hears."></textarea></label>
+              <div class="row"><button class="btn primary" id="capTranscribe">Create captions</button>
+                <button class="btn" id="capLoadSrt">Load a subtitle file instead</button><input type="file" id="capSrtFile" accept=".srt" hidden></div>
+              <div class="bar" id="capJobBar" hidden><div></div></div>
+              <div class="hint left" id="capJobStatus"></div>
+            </div>
+            <div class="card cap-lines" id="capLinesCard" hidden>
+              <div class="cap-tools">
+                <span class="muted" id="capLengthLabel">Line length</span>
+                <div class="seg" id="capLength"><button data-v="short">Short</button><button data-v="medium">Medium</button><button data-v="long">Sentences</button></div>
+                <span class="grow"></span>
+                <button class="btn small" id="capRedo">Read speech again</button>
+              </div>
+              <div id="capLines"></div>
+              <div class="row"><button class="btn small" id="capAdd">Add a line</button><span class="hint left" id="capSaved"></span></div>
+            </div>
+          </div>
+          <div class="col panel cap-side">
+            <div class="card"><div class="label">Preview</div><div class="preview"><img id="capPreview" alt="Caption preview"></div></div>
+            <div class="card style-card">
+              <div class="label">Style</div>
+              <label class="field"><span>Font</span><select id="stFont"></select></label>
+              <label class="field"><span>Size</span><output id="stSizeOut"></output><input type="range" id="stSize" min="30" max="200" step="2"></label>
+              <div class="field"><span>Text colour</span><input type="color" id="stColor"></div>
+              <label class="field"><span>Outline</span><output id="stOutlineOut"></output><input type="range" id="stOutline" min="0" max="16" step="1"></label>
+              <div class="field"><span>Outline colour</span><input type="color" id="stOutlineColor"></div>
+              <div class="field"><span>Background box</span><span class="pair"><input type="color" id="stBoxColor"><input type="checkbox" id="stBox"></span></div>
+              <label class="field"><span>Box opacity</span><output id="stBoxOpacityOut"></output><input type="range" id="stBoxOpacity" min="0" max="100" step="5"></label>
+              <label class="field"><span>Height on screen</span><output id="stPositionOut"></output><input type="range" id="stPosition" min="5" max="95" step="1"></label>
+              <label class="field"><span>Widest line</span><output id="stWidthOut"></output><input type="range" id="stWidth" min="40" max="100" step="5"></label>
+              <div class="field"><span>ALL CAPITALS</span><input type="checkbox" id="stUpper"></div>
+            </div>
+            <div class="card">
+              <div class="label">Translate captions</div>
+              <p class="muted small-gap">Makes a translated copy with the same timings. This project stays as it is.</p>
+              <div class="pair-row"><select id="capTarget" aria-label="Translate into"></select><button class="btn" id="capTranslate">Translate</button></div>
+              <div class="bar" id="capTrBar" hidden><div></div></div>
+              <div class="hint left" id="capTrStatus"></div>
+            </div>
+            <button class="btn primary big" id="capExportVideo">Export video with captions</button>
+            <button class="btn" id="capExportSrt">Export subtitle file (SRT)</button>
+            <div class="bar" id="capExportBar" hidden><div></div></div>
+            <div class="hint" id="capExportStatus"></div>
+            <div class="card result" id="capResult" hidden>
+              <div class="label">Exported</div><div class="result-title" id="capResultName"></div><div class="result-meta" id="capResultMeta"></div>
+              <div class="row"><a class="btn primary" id="capResultDownload">Download</a><button class="btn" id="capResultFolder">Show in folder</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Translate -->
+    <section id="view-translate" class="view">
+      <header><h1>Translate</h1><p>English, Chinese and Burmese, in any direction, on this computer.</p></header>
+      <div class="card tr-setup" id="trSetup">
+        <div class="tr-setup-row"><span class="dot" id="trDot"></span><span id="trStatus">Checking translation</span></div>
+        <div class="row" id="trSetupActions" hidden>
+          <button class="btn primary" id="trSetupBtn">Set up translation</button>
+          <button class="btn" id="trCheck">Check again</button>
+          <a class="btn ghost" href="https://ollama.com/download" target="_blank" rel="noopener" id="trGetOllama" hidden>Get Ollama</a>
+        </div>
+        <div class="bar" id="trSetupBar" hidden><div></div></div>
+        <div class="hint left" id="trSetupDetail"></div>
+      </div>
+      <div class="tr-grid">
+        <div class="card tr-box">
+          <select id="trFrom" aria-label="Translate from"><option value="auto">Detect language</option></select>
+          <textarea id="trIn" placeholder="Type or paste text to translate."></textarea>
+        </div>
+        <button class="btn tr-swap" id="trSwap" title="Swap languages" aria-label="Swap languages">⇄</button>
+        <div class="card tr-box">
+          <select id="trTo" aria-label="Translate to"></select>
+          <textarea id="trOut" readonly placeholder="The translation appears here."></textarea>
+          <div class="row"><button class="btn small" id="trCopy">Copy</button><button class="btn small" id="trToStudio" hidden>Use as voiceover script</button></div>
+        </div>
+      </div>
+      <div class="row"><button class="btn primary big tr-go" id="trGo">Translate</button></div>
+      <div class="bar" id="trBar" hidden><div></div></div>
+      <div class="hint" id="trMsg"></div>
+    </section>
+
+    <!-- Library -->
+    <section id="view-library" class="view">
+      <header><h1>Library</h1><p>Every clip you have made, with the script behind it.</p>
+        <button class="btn" id="libFolder">Open folder</button></header>
+      <div class="card list" id="libList"></div>
+    </section>
+
+    <!-- Pronunciation -->
+    <section id="view-words" class="view">
+      <header><h1>Pronunciation</h1><p>Teach the voice how to say names and unusual words. Each fix is remembered and applied to every future clip.</p></header>
+      <div class="card">
+        <form class="word-form" id="wordForm">
+          <label><span>Word in your script</span><input id="wWord" maxlength="60" placeholder="Qatar" autocomplete="off"></label>
+          <label><span>Say it as</span><input id="wSay" maxlength="120" placeholder="KUH-tar" autocomplete="off"></label>
+          <button type="button" class="btn" id="wTest">Listen</button>
+          <button type="submit" class="btn primary">Save</button>
+        </form>
+      </div>
+      <div class="card list" id="wordList"></div>
+    </section>
+
+    <!-- Settings -->
+    <section id="view-settings" class="view">
+      <header><h1>Settings</h1><p>How this copy of Factopia Voice is set up.</p></header>
+      <div class="card rows">
+        <div><span>Voice</span><b id="sVoice"></b></div>
+        <div><span>Speech engine</span><b id="sEngine"></b></div>
+        <div><span>Target length</span><b><input type="number" id="sMax" min="10" max="180" step="5"> seconds</b></div>
+        <div><span>Clips are saved in</span><b class="path" id="sFolder"></b></div>
+        <div><span>Settings and dictionary</span><b class="path" id="sData"></b></div>
+        <div><span>Translation quality</span><b><select id="sQuality"><option value="standard">Standard (TranslateGemma 4B, 3.3 GB)</option><option value="high">High (TranslateGemma 12B, 8.1 GB)</option></select> <span class="muted" id="sTranslate"></span></b></div>
+        <div><span>Version</span><b id="sVersion"></b></div>
+      </div>
+      <div class="row"><button class="btn" id="sOpen">Open clips folder</button><button class="btn danger" id="sQuit">Quit Factopia Voice</button></div>
+    </section>
+  </main>
+</div>
+
+<div class="overlay" id="setup">
+  <div class="setup-card">
+    <img src="/icon.svg" alt="" width="44" height="44">
+    <h2 id="setupTitle">Getting the voice ready</h2>
+    <p id="setupText">Starting up</p>
+    <div class="bar"><div id="setupBar"></div></div>
+    <small id="setupNote">The first start downloads about 340 MB. After that it works offline.</small>
+  </div>
+</div>
+<audio id="player" hidden></audio>
+<script src="/app.js"></script>
+<script src="/captions.js"></script>
+<script src="/translate.js"></script>
+</body>
+</html>

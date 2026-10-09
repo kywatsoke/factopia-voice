@@ -1,0 +1,7 @@
+kokoro-onnx==0.6.1
+soundfile>=0.13
+numpy
+sherpa-onnx>=1.12
+Pillow>=10
+imageio-ffmpeg>=0.5
+fonttools>=4.40

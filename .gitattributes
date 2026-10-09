@@ -1,0 +1,26 @@
+# Line endings: Git stores text with LF; launchers keep the endings their
+# operating system needs, whatever computer they are checked out on.
+* text=auto
+*.bat text eol=crlf
+*.command text eol=lf
+*.sh text eol=lf
+*.py text eol=lf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.mp3 binary
+*.wav binary
+*.mp4 binary
+*.onnx binary
+*.zip binary
+
+# Left out of the release zip (scripts/package.sh uses git archive).
+# The zip holds only what is needed to run the app.
+/.github export-ignore
+/docs export-ignore
+/scripts export-ignore
+/tests export-ignore
+/requirements-dev.txt export-ignore
+/.gitattributes export-ignore
+/.gitignore export-ignore
