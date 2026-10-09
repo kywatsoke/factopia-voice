@@ -88,7 +88,7 @@ jobs:
 
       - name: Models for the self-test (cached)
         id: models
-        uses: actions/cache@v6
+        uses: actions/cache/restore@v6
         with:
           path: ~/fv-test-models
           key: fv-test-models-kokoro-v1.0-parakeet-v2-int8
@@ -96,6 +96,13 @@ jobs:
       - name: Download the models for the self-test
         if: steps.models.outputs.cache-hit != 'true'
         run: packaging/ci_run.sh "Test models" uv run --python 3.12 --no-project --with-requirements requirements.txt python packaging/fetch_test_models.py ~/fv-test-models
+
+      - name: Keep the models for the next run
+        if: steps.models.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: ~/fv-test-models
+          key: fv-test-models-kokoro-v1.0-parakeet-v2-int8
 
       - name: Self-test the packed app
         run: |

@@ -32,6 +32,12 @@ def main():
         tar.extractall(WORK, filter="data")
     src = WORK / f"fribidi-{FRIBIDI_VERSION}"
     env = dict(os.environ)
+    # meson and ninja from this Python's environment come first on PATH.
+    parts = [str(Path(sys.executable).parent)] + env.get("PATH", "").split(os.pathsep)
+    if sys.platform == "win32":
+        # Git for Windows puts a GNU "link.exe" on PATH that hides MSVC's linker.
+        parts = [p for p in parts if not p.lower().replace("/", "\\").rstrip("\\").endswith(("git\\usr\\bin", "git\\bin", "\\usr\\bin"))]
+    env["PATH"] = os.pathsep.join(parts)
     if sys.platform == "darwin":
         env["MACOSX_DEPLOYMENT_TARGET"] = "11.0"
     run(sys.executable, "-m", "mesonbuild.mesonmain", "setup", src / "build", src, "--buildtype=release",
