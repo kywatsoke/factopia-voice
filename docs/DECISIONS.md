@@ -7,8 +7,9 @@ so a later change can be judged against the reason for the first.
 ## 2026-10-09 · Open source (GPL-3.0-or-later) in a public repository
 
 - **Chosen:** the app's own code is licensed GPL-3.0-or-later and the
-  repository `kywatsoke/factopia` is public. Commit history uses GitHub's
-  no-reply address instead of a personal email. Tests run on Linux, Windows
+  repository `kywatsoke/factopia-voice` is public. It was started fresh from a
+  history rewritten to GitHub's no-reply address, so no personal email is
+  published; the earlier private repository is kept only as a backup. Tests run on Linux, Windows
   and macOS for every push. The Release workflow, started from the Actions
   tab, builds the downloads and tags the version.
 - **Why:** the app is shared free with friends, and two parts of the voice
