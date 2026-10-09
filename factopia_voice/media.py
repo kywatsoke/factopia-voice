@@ -61,3 +61,59 @@ def extract_audio(path, wav):
     r = run("-y", "-i", path, "-vn", "-ac", "1", "-ar", "16000", "-c:a", "pcm_s16le", wav)
     if r.returncode != 0 or not os.path.exists(wav):
         raise RuntimeError("Could not read the sound from that file.")
+
+
+# ---- video encoders ----------------------------------------------------------
+# Hardware encoders tried in order, by system. Each is test-run once on a tiny
+# clip before it is trusted; the processor (x264) is always the fallback.
+HARDWARE = {"darwin": ["h264_videotoolbox"], "win32": ["h264_nvenc", "h264_qsv", "h264_amf"],
+            "linux": ["h264_nvenc"]}
+LABELS = {"h264_videotoolbox": "Apple VideoToolbox", "h264_nvenc": "NVIDIA graphics card",
+          "h264_qsv": "Intel graphics", "h264_amf": "AMD graphics", None: "Processor (x264)"}
+_PIXELS = {"h264_qsv": "nv12", "h264_amf": "nv12"}
+
+
+def _encoder_works(name):
+    r = run("-f", "lavfi", "-i", "color=c=black:s=320x240:r=30:d=1", "-frames:v", "15", "-c:v", name,
+            "-b:v", "1M", "-pix_fmt", _PIXELS.get(name, "yuv420p"), "-f", "null", "-")
+    return r.returncode == 0
+
+
+@lru_cache(1)
+def hardware_encoder():
+    """The first hardware H.264 encoder that works on this computer, or None."""
+    import json
+    from .config import CACHE
+    exe = ffmpeg()
+    try:
+        stamp = f"{exe}|{os.path.getsize(exe)}|{int(os.path.getmtime(exe))}"
+    except OSError:
+        stamp = exe
+    cache = CACHE / "encoders.json"
+    try:
+        saved = json.loads(cache.read_text(encoding="utf-8"))
+        if saved.get("stamp") == stamp:
+            return saved.get("encoder")
+    except (OSError, ValueError):
+        pass
+    listed = run("-encoders").stdout.decode("utf-8", "replace")
+    found = None
+    for name in HARDWARE.get(sys.platform if sys.platform in HARDWARE else "linux", []):
+        if re.search(rf"\b{name}\b", listed) and _encoder_works(name):
+            found = name
+            break
+    try:
+        CACHE.mkdir(parents=True, exist_ok=True)
+        cache.write_text(json.dumps({"stamp": stamp, "encoder": found}), encoding="utf-8")
+    except OSError:
+        pass
+    return found
+
+
+def video_args(encoder, width, height, fps):
+    """ffmpeg arguments for the video stream of an export."""
+    if not encoder:
+        return ["-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p"]
+    kbps = int(max(4000, min(40000, width * height * fps * 0.16 / 1000)))     # about 10 Mbps at 1080p30
+    return ["-c:v", encoder, "-b:v", f"{kbps}k", "-maxrate", f"{kbps * 3 // 2}k", "-bufsize", f"{kbps * 2}k",
+            "-pix_fmt", _PIXELS.get(encoder, "yuv420p")]

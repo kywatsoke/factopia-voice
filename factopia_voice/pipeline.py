@@ -25,9 +25,13 @@ class Studio:
         self.engine = None
         self.status = {"phase": "starting", "percent": 0, "detail": ""}
         self._lock = threading.Lock()
+        self._started = False
 
     # ---- start-up -------------------------------------------------------
     def start(self):
+        if self._started:
+            return
+        self._started = True
         threading.Thread(target=self._boot, daemon=True).start()
 
     def _set(self, phase, percent=0, detail=""):
@@ -61,6 +65,7 @@ class Studio:
         except Exception as e:
             traceback.print_exc()
             self._set("error", 0, f"{e}")
+            self._started = False          # a later start can try again
 
     def require_ready(self):
         if self.status["phase"] != "ready":
