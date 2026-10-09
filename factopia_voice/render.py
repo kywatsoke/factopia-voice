@@ -143,8 +143,9 @@ class _Overlay:
         frame[y0:y1, x0:x1] = ((self.color + region * (255 - self.alpha)) // 255).astype(np.uint8)
 
 
-def burn(source, out_path, lines, style, info, on_progress=lambda pct: None):
-    """Write a copy of the video with the captions drawn into the picture."""
+def burn(source, out_path, lines, style, info, on_progress=lambda pct: None, encoder=None):
+    """Write a copy of the video with the captions drawn into the picture.
+    encoder: a hardware H.264 encoder name from media.hardware_encoder(), or None for x264."""
     width, height = info["width"] // 2 * 2, info["height"] // 2 * 2      # H.264 needs even sizes
     fps, duration = info["fps"], max(info["duration"], 0.1)
     log = open(str(out_path) + ".log", "wb")
@@ -155,7 +156,7 @@ def burn(source, out_path, lines, style, info, on_progress=lambda pct: None):
     encoder = subprocess.Popen(
         media.command("-y", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{width}x{height}", "-r", fps,
                       "-i", "pipe:0", "-i", source, "-map", "0:v:0", "-map", "1:a:0?",
-                      "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p",
+                      *media.video_args(encoder, width, height, fps),
                       "-c:a", "aac", "-b:a", "192k", "-shortest", "-movflags", "+faststart", out_path),
         stdin=subprocess.PIPE, stderr=log, creationflags=media.NO_WINDOW)
     size, index, cursor, cache, frames = width * height * 3, 0, 0, {}, 0

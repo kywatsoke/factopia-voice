@@ -2,25 +2,24 @@
 only (127.0.0.1) and refuses requests that come from other websites."""
 import json
 import mimetypes
-import os
-import subprocess
 import sys
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
 
-from . import __version__, library
-from . import fonts, languages, projects, render
-from .translate import QUALITIES, get_translator
-from .config import CACHE, DATA, OUTPUT, PORT, WEB, dictionary_store, profile_store
+from . import __version__, about, config, jobs, library, shell, storage, updates
+from . import fonts, languages, media, projects, render
+from .config import CACHE, DATA, LOGS, MODELS, OUTPUT, PORT, PROJECTS, WEB, dictionary_store, profile_store
 from .pipeline import Studio, clamp
+from .translate import ENGINES, engine_choice, get_translator, qualities
 
 studio = Studio()
 ALLOWED_HOSTS = {f"127.0.0.1:{PORT}", f"localhost:{PORT}"}
 STATIC = {"/": "index.html", "/app.css": "app.css", "/app.js": "app.js", "/captions.js": "captions.js",
-          "/translate.js": "translate.js",
+          "/translate.js": "translate.js", "/settings.js": "settings.js", "/welcome.js": "welcome.js",
           "/icon.svg": "icon.svg"}
+SETTINGS = {"acceleration": ("auto", "off"), "translation_engine": tuple(ENGINES), "check_updates": (True, False)}
 MAX_UPLOAD = 8 * 1024 ** 3
 TYPES = {".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8",
          ".js": "text/javascript; charset=utf-8", ".svg": "image/svg+xml",
@@ -32,16 +31,45 @@ def state():
     profile = profile_store.load()
     engine = studio.engine
     voice = engine.voice(profile["voice"]) if engine else None
+    choice = engine_choice(profile)
     return {
         "version": __version__, "status": studio.status, "profile": profile,
         "voice": voice.to_dict() if voice else None,
         "engine": {"id": engine.id, "name": engine.name, "license": engine.license,
                    "voices": len(engine.voices())} if engine else None,
-        "folder": str(OUTPUT), "data_folder": str(DATA),
+        "folder": str(OUTPUT), "data_folder": str(DATA), "models_folder": str(MODELS), "layout": config.LAYOUT,
+        "shell": shell.MODE, "platform": sys.platform, "welcome": not profile.get("terms_accepted"),
         "dictionary": dictionary_store.load(), "library": library.items(),
         "languages": {k: {"name": v["name"], "native": v["native"]} for k, v in languages.LANGUAGES.items()},
-        "translation_qualities": {k: {"model": m, "size": size} for k, (m, size) in QUALITIES.items()},
+        "translation_languages": list(languages.TRANSLATION),
+        "translation": {"engine": choice, "setting": profile.get("translation_engine", "auto"), "engines": ENGINES,
+                        "qualities": qualities(choice)},
+        "translation_qualities": qualities(choice),
     }
+
+
+def performance():
+    """What each engine runs on, for Settings > Performance."""
+    from .translate import llamacpp
+    on = profile_store.load().get("acceleration", "auto") != "off"
+    if sys.platform == "darwin":
+        translation = "Apple graphics chip (Metal)" if on else "Processor"
+    elif sys.platform == "win32":
+        translation = "Graphics card when one is found (Vulkan), otherwise the processor" if on else "Processor"
+    else:
+        translation = "Processor"
+    if llamacpp.SERVER.running():
+        translation = (llamacpp.SERVER.device if llamacpp.SERVER.mode == "gpu" else "Processor") + " (running now)"
+    encoder = media.hardware_encoder() if on else None
+    return {"acceleration": "auto" if on else "off", "translation": translation,
+            "video": media.LABELS[encoder], "voice": "Processor (already faster than real time)",
+            "speech": "Processor (already faster than real time)"}
+
+
+def begin():
+    """Start loading the voice, once the model terms have been agreed."""
+    if profile_store.load().get("terms_accepted"):
+        studio.start()
 
 
 def public(project):
@@ -159,6 +187,20 @@ class Handler(BaseHTTPRequestHandler):
                                     "default": fonts.default_id()})
         if path == "/api/translate/status":
             return self.reply(200, get_translator().status())
+        if path == "/api/storage":
+            return self.reply(200, storage.summary())
+        if path == "/api/performance":
+            return self.reply(200, performance())
+        if path == "/api/about":
+            return self.reply(200, about.info() | {"version": __version__, "logs": str(LOGS),
+                                                   "data_folder": str(DATA), "models_folder": str(MODELS)})
+        if path == "/api/update":
+            if not profile_store.load().get("check_updates", True):
+                return self.reply(200, {"current": __version__, "newer": False, "disabled": True})
+            return self.reply(200, updates.check(force="force=1" in url.query))
+        if path == "/api/job":
+            job = jobs.jobs.get((parse_qs(url.query).get("id") or [""])[0])
+            return self.reply(200, job) if job else self.reply(404, {"error": "That job is no longer running."})
         if path in ("/api/captions/project", "/api/captions/job"):
             ident = (parse_qs(url.query).get("id") or [""])[0]
             try:
@@ -239,7 +281,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self.reply(200, projects.start_translate_text(str(data.get("text") or ""), str(data.get("source") or "auto"),
                                                                      data.get("target")))
             if path == "/api/translate/setup":
-                if data.get("quality") in QUALITIES:
+                if data.get("quality") in ("standard", "high"):
                     profile = profile_store.load()
                     profile["translation_quality"] = data["quality"]
                     profile_store.save(profile)
@@ -264,11 +306,61 @@ class Handler(BaseHTTPRequestHandler):
                 projects.delete(str(data.get("id") or ""))
                 return self.reply(200, {"projects": projects.summaries()})
             if path == "/api/open":
-                open_folder(OUTPUT)
+                where = {"output": OUTPUT, "data": DATA, "logs": LOGS, "models": MODELS, "projects": PROJECTS,
+                         "licences": about.licences_folder()}.get(data.get("what") or "output")
+                if where is None:
+                    raise ValueError("Unknown folder.")
+                shell.open_path(where)
+                return self.reply(200, {"ok": True})
+            if path == "/api/reveal":
+                name = Path(str(data.get("file") or "")).name
+                if not name or not (OUTPUT / name).is_file():
+                    raise ValueError("That file is no longer there.")
+                shell.reveal(OUTPUT / name)
+                return self.reply(200, {"ok": True})
+            if path == "/api/open-url":
+                shell.open_url(str(data.get("url") or ""))
+                return self.reply(200, {"ok": True})
+            if path == "/api/settings":
+                profile = profile_store.load()
+                for key, allowed in SETTINGS.items():
+                    if key in data and data[key] in allowed:
+                        profile[key] = data[key]
+                if profile.get("translation_engine") != profile_store.load().get("translation_engine"):
+                    from .translate import shutdown
+                    shutdown()
+                profile_store.save(profile)
+                return self.reply(200, state())
+            if path == "/api/welcome/accept":
+                profile = profile_store.load()
+                if not profile.get("terms_accepted"):
+                    import time
+                    profile["terms_accepted"] = time.strftime("%Y-%m-%d")
+                    profile_store.save(profile)
+                begin()
+                return self.reply(200, state())
+            if path == "/api/import-earlier":
+                folder = data.get("folder") or shell.pick_folder()
+                if not folder:
+                    return self.reply(200, {"cancelled": True})
+                return self.reply(200, storage.start_import(folder))
+            if path == "/api/storage/remove":
+                return self.reply(200, storage.remove(str(data.get("id") or "")))
+            if path == "/api/storage/move":
+                folder = data.get("folder") or shell.pick_folder()
+                if not folder:
+                    return self.reply(200, {"cancelled": True})
+                return self.reply(200, storage.start_move(folder))
+            if path == "/api/focus":
+                shell.focus()
+                return self.reply(200, {"ok": True})
+            if path == "/api/alive":
+                import time
+                shell.last_seen = time.time()
                 return self.reply(200, {"ok": True})
             if path == "/api/quit":
                 self.reply(200, {"ok": True})
-                threading.Thread(target=self.server.shutdown, daemon=True).start()
+                threading.Thread(target=quit_app, args=(self.server,), daemon=True).start()
                 return
         except (ValueError, RuntimeError) as e:
             return self.reply(400, {"error": str(e)})
@@ -339,15 +431,17 @@ def _receive_srt(self):
 Handler.receive_srt = _receive_srt
 
 
-def open_folder(folder):
-    if sys.platform == "win32":
-        os.startfile(folder)  # noqa
-    else:
-        subprocess.Popen(["open" if sys.platform == "darwin" else "xdg-open", str(folder)],
-                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+def quit_app(server):
+    """Stop everything: the window (if any), the engines and the server."""
+    from .translate import shutdown
+    shutdown()
+    shell.close()
+    server.shutdown()
 
 
-def make_server():
-    server = ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
+def make_server(port=PORT):
+    server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
     server.daemon_threads = True
+    actual = server.server_address[1]
+    ALLOWED_HOSTS.update({f"127.0.0.1:{actual}", f"localhost:{actual}"})
     return server

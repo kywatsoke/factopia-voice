@@ -194,3 +194,37 @@ h2{font-size:18px;margin:4px 0 6px;letter-spacing:-.01em}
 .pair-row{display:flex;gap:8px}.pair-row select{flex:1;padding:8px;border:1px solid var(--line2);border-radius:9px;background:var(--field)}
 @media (max-width:760px){.tr-grid{grid-template-columns:1fr}.tr-swap{justify-self:center}}
 .rows select{padding:6px 8px;border:1px solid var(--line2);border-radius:8px;background:var(--field);margin-right:8px}
+
+/* ---------- 3.0: welcome, settings, update banner ---------- */
+input[type=checkbox]{width:17px;height:17px;padding:0;accent-color:var(--acc);vertical-align:-3px;flex:none}
+.check{display:inline-flex;align-items:center;gap:8px;margin-right:12px;font-weight:550;cursor:pointer}
+.settings{display:flex;flex-direction:column;gap:14px}
+.settings .card>.label{padding:14px 0 2px}
+.rows>.label{display:block;border:0;padding:14px 0 2px}
+.rows.compact>div{padding:9px 0}
+.settings .card:not(.rows){padding:4px 18px 16px}
+.settings .list{padding:0}
+.storage .item{grid-template-columns:minmax(0,1fr) auto auto}
+.size{font-variant-numeric:tabular-nums;color:var(--mute);font-size:14px;white-space:nowrap}
+.about p{margin:8px 0}
+.about details{margin-top:6px}
+.about summary{cursor:pointer;color:var(--mute);font-size:14px;padding:6px 0}
+.about a{color:var(--ink)}
+.banner{display:flex;align-items:center;gap:12px;max-width:1040px;margin:0 auto 18px;padding:10px 14px;border:1px solid var(--line2);border-radius:12px;background:var(--acc-soft)}
+.banner span{flex:1;font-weight:550}
+.welcome-card{width:min(560px,100%);text-align:left}
+.welcome-card>img{display:block}
+.welcome-card h2{margin-top:14px}
+.welcome-card .label{margin:18px 0 6px}
+.models{border:1px solid var(--line);border-radius:12px;background:var(--card)}
+.models>div{display:grid;grid-template-columns:130px minmax(0,1fr);gap:10px;padding:11px 14px;border-bottom:1px solid var(--line);font-size:14px}
+.models>div:last-child{border-bottom:0}
+.models span{color:var(--mute)}
+.models a,.agree a{color:var(--ink)}
+.agree{display:flex;gap:10px;align-items:flex-start;margin:18px 0 14px;font-size:14px;line-height:1.5;cursor:pointer}
+.agree input{margin-top:2px}
+.welcome-import{margin-top:16px;display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.welcome-import .bar,.welcome-import .hint{flex-basis:100%}
+.welcome-card .hint{text-align:left}
+@media (max-width:600px){.models>div{grid-template-columns:1fr;gap:2px}}
+.settings .rows.compact{padding:0}

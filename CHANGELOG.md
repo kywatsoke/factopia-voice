@@ -2,6 +2,44 @@
 
 All notable changes to Factopia Voice. Versions follow MAJOR.MINOR.PATCH.
 
+## 3.0.0-beta.1 - 2026-10-09
+
+Easy install: a real app for Mac and Windows, for people who are not
+technical. A test version, published as a pre-release.
+
+- Installers: `Factopia-Voice-Mac.dmg` for Apple silicon Macs (macOS 13 or
+  later) and `Factopia-Voice-Windows-Setup.exe` for Windows 10 and 11. No
+  Python, no terminal, no administrator password on Windows.
+- The app opens in its own window. Opening it again brings the window forward.
+- First start: a welcome screen lists the AI models and their terms, with one
+  "Agree and continue". Models download inside the app when first needed,
+  with progress and resume after a broken connection; the translation model
+  is also checked against its published checksum.
+- Translation is built in: TranslateGemma 4B runs on llama.cpp inside the
+  app, downloaded without any sign-in. Ollama stays available as an option.
+- Translation now covers English and Chinese only. Burmese translation is
+  removed: its quality was not good enough with either model size. Burmese
+  captions still work (import an SRT, edit, style, export).
+- Burmese captions are drawn correctly on Mac and Windows: the app now
+  carries the FriBiDi text-shaping library.
+- Speed: translation uses the Mac's graphics chip or a Windows graphics card
+  when there is one, video export uses the computer's video encoder, and
+  both fall back to the processor by themselves. Settings > Performance shows
+  what is used, with a switch to use the processor only.
+- Files in the usual places: what you make goes to Documents/Factopia Voice;
+  settings, projects and models to the per-user app folder. Settings >
+  Storage shows sizes, removes models and moves them to another drive.
+  "Bring in your earlier work" copies everything from a 2.x folder.
+- Settings > Updates checks once a day for a new version (can be turned off).
+- Settings > About and licences lists every model and component with its
+  licence, and links to the source code.
+- In the app window, "Show in Finder/folder" replaces downloads: files are
+  already saved in your Documents folder.
+- Factopia Voice is open source (GPL-3.0-or-later).
+- Each installer is built and started on GitHub's Mac and Windows machines,
+  which check text shaping, the engines, the window, a spoken sentence heard
+  back by speech recognition, and installing the installer itself.
+
 ## 2.2.1 - 2026-10-09
 
 Repository set up on GitHub, with documentation and automatic testing.

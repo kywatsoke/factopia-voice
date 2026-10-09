@@ -15,12 +15,17 @@
 
   function fill() {
     if (X.filled || !S || !S.languages) return;
-    const opts = Object.entries(S.languages).map(([k, v]) => el("option", { value: k, textContent: v.native === v.name ? v.name : `${v.name}  ${v.native}` }));
+    const codes = S.translation_languages || ["en", "zh"];
+    const opts = codes.map(k => { const v = S.languages[k]; return el("option", { value: k, textContent: v.native === v.name ? v.name : `${v.name}  ${v.native}` }); });
     $("trFrom").append(...opts.map(o => o.cloneNode(true)));
     $("trTo").append(...opts.map(o => o.cloneNode(true)));
-    $("trTo").value = "my";
-    try { const saved = JSON.parse(localStorage.getItem("fv-tr") || "{}"); if (saved.from) $("trFrom").value = saved.from; if (saved.to) $("trTo").value = saved.to; } catch {}
-    $("sQuality").value = (S.profile && S.profile.translation_quality) || "standard";
+    $("trTo").value = "zh";
+    try {
+      const saved = JSON.parse(localStorage.getItem("fv-tr") || "{}");
+      if (saved.from && (saved.from === "auto" || codes.includes(saved.from))) $("trFrom").value = saved.from;
+      if (saved.to && codes.includes(saved.to)) $("trTo").value = saved.to;
+    } catch {}
+    if (window.fillTranslation) window.fillTranslation();
     X.filled = true; updateStudioButton();
   }
   function remember() { try { localStorage.setItem("fv-tr", JSON.stringify({ from: $("trFrom").value, to: $("trTo").value })); } catch {} }
@@ -36,7 +41,7 @@
     $("sTranslate").textContent = st.ready ? "Ready" : "Not set up yet";
     $("trSetupActions").hidden = st.ready;
     $("trGetOllama").hidden = st.step !== "install";
-    $("trSetupBtn").hidden = st.step === "install";
+    $("trSetupBtn").hidden = st.step === "install" || st.step === "engine";
     $("trSetupBtn").textContent = st.step === "download" ? "Download the translation model" : st.step === "start" ? "Start Ollama" : "Set up translation";
     $("trGo").disabled = !st.ready;
     return st;
@@ -45,18 +50,13 @@
   $("trSetupBtn").addEventListener("click", async () => {
     $("trSetupBtn").disabled = true;
     try {
-      const job = await api("/api/translate/setup", { quality: $("sQuality").value });
+      const job = await api("/api/translate/setup", { quality: $("sQuality").value || (S && S.profile && S.profile.translation_quality) || "standard" });
       await poll(job, j => { bar("trSetupBar", j.percent); msg("trSetupDetail", j.detail, "busy"); });
       bar("trSetupBar", null); msg("trSetupDetail", "");
     } catch (e) { bar("trSetupBar", null); msg("trSetupDetail", e.message, "err"); }
     $("trSetupBtn").disabled = false; refresh();
   });
   $("trCheck").addEventListener("click", refresh);
-  $("sQuality").addEventListener("change", async () => {
-    await api("/api/translate/setup", { quality: $("sQuality").value, check_only: true }).catch(() => {});
-    if (S && S.profile) S.profile.translation_quality = $("sQuality").value;
-    refresh();
-  });
 
   async function translate() {
     const text = $("trIn").value.trim();

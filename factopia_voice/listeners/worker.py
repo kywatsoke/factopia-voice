@@ -1,22 +1,19 @@
-"""Runs speech recognition in its own process, so its memory (about 1 GB) is
-returned when it finishes and its runtime never clashes with the voice engine's.
+"""Speech recognition inside a helper process (see workers.py).
 
-    python -m factopia_voice.listeners.worker <listener> <models_dir> <wav> <out.json>
+    <app> --fv-worker listen <listener> <models_dir> <wav> <out.json>
 """
 import json
-import sys
 from pathlib import Path
 
 from . import create_listener
 
 
-def main():
-    listener_id, models_dir, wav, out = sys.argv[1:5]
-    words = create_listener(listener_id).transcribe(
-        Path(wav), Path(models_dir), lambda pct, detail: print(f"P {pct}", flush=True))
-    Path(out).write_text(json.dumps(words), encoding="utf-8")
-    print("DONE", flush=True)
+def run(listener_id, models_dir, wav, out):
+    out = Path(out)
+    progress = Path(str(out) + ".progress")
 
+    def report(pct, detail=None):
+        progress.write_text(str(int(pct)), encoding="utf-8")
 
-if __name__ == "__main__":
-    main()
+    words = create_listener(listener_id).transcribe(Path(wav), Path(models_dir), report)
+    out.write_text(json.dumps(words), encoding="utf-8")

@@ -1,6 +1,6 @@
-"""Translation with Google's TranslateGemma (Gemma Terms of Use; Google claims
-no rights in outputs), run locally by Ollama. Ollama uses the Mac's graphics
-chip, keeps the model loaded between requests, and handles the download."""
+"""Translation with Google's TranslateGemma run by Ollama, for people who already
+use the Ollama app (Settings > Translation engine). The built-in engine
+(llamacpp.py) needs no extra app and is the default in the installed app."""
 import json
 import os
 import shutil
@@ -11,21 +11,18 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-from ..languages import LANGUAGES, valid
-from .base import Translator
+from ..languages import check_translation, valid
+from .base import Translator, clean_output, prompt_for
+from ..net import open_url
 
 BASE = os.environ.get("FACTOPIA_VOICE_OLLAMA", "http://127.0.0.1:11434").rstrip("/")
 MODELS = {"standard": ("translategemma:4b", "3.3 GB"), "high": ("translategemma:12b", "8.1 GB")}
-PROMPT = ("You are a professional {sl} ({sc}) to {tl} ({tc}) translator. Your goal is to accurately convey the "
-          "meaning and nuances of the original {sl} text while adhering to {tl} grammar, vocabulary, and cultural "
-          "sensitivities.\nProduce only the {tl} translation, without any additional explanations or commentary. "
-          "Please translate the following {sl} text into {tl}:\n\n\n{text}")
 
 
 def _request(path, body=None, timeout=10):
     data = None if body is None else json.dumps(body).encode()
     req = urllib.request.Request(BASE + path, data=data, headers={"Content-Type": "application/json"})
-    return urllib.request.urlopen(req, timeout=timeout)
+    return open_url(req, timeout=timeout)
 
 
 def find_ollama():
@@ -119,8 +116,8 @@ class OllamaTranslator(Translator):
         source, target = valid(source), valid(target)
         if source == target or not text.strip():
             return text
-        s, t = LANGUAGES[source], LANGUAGES[target]
-        prompt = PROMPT.format(sl=s["name"], sc=s["code"], tl=t["name"], tc=t["code"], text=text.strip())
+        check_translation(source, target)
+        prompt = prompt_for(text, source, target)
         body = {"model": self.model, "messages": [{"role": "user", "content": prompt}], "stream": False,
                 "keep_alive": "15m", "options": {"temperature": 0, "num_predict": max(256, len(text) * 6)}}
         try:
@@ -131,10 +128,4 @@ class OllamaTranslator(Translator):
             raise RuntimeError(f"Translation failed: {detail}")
         except (urllib.error.URLError, OSError):
             raise RuntimeError("Ollama stopped responding. Make sure the Ollama app is open, then try again.")
-        out = (reply.get("message") or {}).get("content", "").strip()
-        pairs = {'"': '"', "'": "'", "\u201c": "\u201d", "\u2018": "\u2019", "\u300c": "\u300d"}
-        if len(out) >= 2 and pairs.get(out[0]) == out[-1] and out[0] not in out[1:-1] and out[-1] not in out[1:-1]:
-            out = out[1:-1].strip()
-        if not out:
-            raise RuntimeError("The translation came back empty. Try again.")
-        return out
+        return clean_output((reply.get("message") or {}).get("content", ""))

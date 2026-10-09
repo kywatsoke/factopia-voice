@@ -88,7 +88,8 @@
     if (!$("capLang").options.length && S && S.languages) {
       for (const [k, v] of Object.entries(S.languages)) {
         $("capLang").append(el("option", { value: k, textContent: v.name }));
-        $("capTarget").append(el("option", { value: k, textContent: v.native === v.name ? v.name : `${v.name}  ${v.native}` }));
+        if ((S.translation_languages || ["en", "zh"]).includes(k))
+          $("capTarget").append(el("option", { value: k, textContent: v.native === v.name ? v.name : `${v.name}  ${v.native}` }));
       }
     }
     say("capTrStatus", ""); bar("capTrBar", null);
@@ -105,8 +106,11 @@
     $("capScript").value = p.script || "";
     $("capExportVideo").hidden = !p.has_video;
     $("capLang").value = p.language || "en";
-    for (const o of $("capTarget").options) o.hidden = o.value === (p.language || "en");
-    if ($("capTarget").value === (p.language || "en")) $("capTarget").value = [...$("capTarget").options].find(o => !o.hidden).value;
+    const lang = p.language || "en", translatable = (S.translation_languages || ["en", "zh"]).includes(lang);
+    $("capTrCard").hidden = !translatable;                 // Burmese captions are not translated
+    for (const o of $("capTarget").options) o.hidden = o.value === lang;
+    const firstShown = [...$("capTarget").options].find(o => !o.hidden);
+    if (firstShown && $("capTarget").value === lang) $("capTarget").value = firstShown.value;
     for (const id of ["capLength", "capLengthLabel", "capRedo"]) $(id).hidden = !p.has_words;
     document.querySelectorAll("#capLength button").forEach(b => b.classList.toggle("on", b.dataset.v === p.length));
     const s = p.style;
@@ -273,12 +277,17 @@
   });
 
   /* ---------- export ---------- */
+  let lastExport = null;
   function showResult(r, meta) {
     const url = "/audio/" + encodeURIComponent(r.file);
+    lastExport = r.file;
     $("capResult").hidden = false; $("capResultName").textContent = r.file; $("capResultMeta").textContent = meta;
     $("capResultDownload").href = url + "?download=1"; $("capResultDownload").download = r.file;
+    $("capResultDownload").hidden = native();
+    $("capResultFolder").textContent = revealLabel();
+    $("capResultFolder").classList.toggle("primary", native());
   }
-  $("capResultFolder").addEventListener("click", () => api("/api/open", {}).catch(() => {}));
+  $("capResultFolder").addEventListener("click", () => lastExport && reveal(lastExport));
   $("capExportSrt").addEventListener("click", async () => {
     try { C.dirty = true; await save(); const r = await api("/api/captions/export", { id: C.p.id, kind: "srt" });
       showResult(r, C.p.lines.length + " lines"); say("capExportStatus", "Subtitle file saved."); }
@@ -291,7 +300,7 @@
       const job = await api("/api/captions/export", { id: C.p.id, kind: "video" });
       const r = await pollJob(job, j => { bar("capExportBar", j.percent); say("capExportStatus", j.detail + " " + j.percent + "%", "busy"); });
       bar("capExportBar", null); say("capExportStatus", "Video exported in " + r.took + " seconds.");
-      showResult(r, r.megabytes + " MB");
+      showResult(r, r.megabytes + " MB" + (r.encoder ? "  ·  " + r.encoder : ""));
     } catch (e) { bar("capExportBar", null); say("capExportStatus", e.message, "err"); }
     btn.disabled = false;
   });

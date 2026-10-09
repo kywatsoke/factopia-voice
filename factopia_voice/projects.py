@@ -5,20 +5,17 @@ import os
 import re
 import shutil
 import subprocess
-import sys
 import threading
 import time
-import traceback
 import uuid
 from pathlib import Path
 
-from . import captions, fonts, languages, library, media, render, text as T
-from .config import DATA, MODELS, OUTPUT, profile_store
+from . import captions, fonts, languages, library, media, render, text as T, workers
+from .config import LOGS, MODELS, OUTPUT, PROJECTS, profile_store
+from .jobs import jobs, start as _start  # noqa: F401  (jobs is read by the server)
 from .listeners import create_listener
 from .translate import get_translator
 
-PROJECTS = DATA / "projects"
-jobs = {}
 _lock = threading.RLock()
 
 
@@ -156,31 +153,6 @@ def regroup(project_id, length):
 
 
 # ---- background jobs -------------------------------------------------------
-def _start(kind, work):
-    job_id = uuid.uuid4().hex[:10]
-    job = jobs[job_id] = {"id": job_id, "kind": kind, "percent": 0, "detail": "Starting", "done": False,
-                          "error": None, "result": None}
-
-    def progress(percent, detail=None):
-        if percent is not None:
-            job["percent"] = int(percent)
-        if detail:
-            job["detail"] = detail
-
-    def run():
-        try:
-            job["result"] = work(progress)
-        except (ValueError, RuntimeError, IOError) as e:
-            job["error"] = str(e)
-        except Exception as e:
-            traceback.print_exc()
-            job["error"] = f"Something went wrong: {e}"
-        job["done"] = True
-
-    threading.Thread(target=run, daemon=True).start()
-    return job
-
-
 def start_transcribe(project_id, script=None, length=None):
     project = load(project_id)
 
@@ -191,23 +163,30 @@ def start_transcribe(project_id, script=None, length=None):
         progress(0, "Listening to the recording")
         folder = _folder(project_id)
         out = folder / "words.json"
-        out.unlink(missing_ok=True)
-        proc = subprocess.Popen(
-            [sys.executable, "-m", "factopia_voice.listeners.worker", listener.id, str(MODELS),
-             str(folder / "audio.wav"), str(out)],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8", errors="replace",
-            env={**os.environ, "PYTHONIOENCODING": "utf-8"},
-            cwd=str(Path(__file__).resolve().parent.parent), creationflags=media.NO_WINDOW)
-        for line in proc.stdout:
-            if line.startswith("P "):
-                progress(int(line[2:]), "Listening to the recording")
-        errors = proc.stderr.read()
-        if proc.wait() != 0 or not out.is_file():
-            print(errors, file=sys.stderr)
-            raise RuntimeError("Speech recognition stopped unexpectedly. " + errors.strip().splitlines()[-1][:200]
-                               if errors.strip() else "Speech recognition stopped unexpectedly.")
+        for leftover in (out, Path(str(out) + ".progress"), Path(str(out) + ".error")):
+            leftover.unlink(missing_ok=True)
+        LOGS.mkdir(parents=True, exist_ok=True)
+        with open(LOGS / "speech-recognition.log", "ab") as log:
+            proc = subprocess.Popen(
+                workers.command("listen", listener.id, MODELS, folder / "audio.wav", out),
+                stdout=log, stderr=log, stdin=subprocess.DEVNULL, cwd=workers.workdir(),
+                env={**os.environ, "PYTHONIOENCODING": "utf-8"}, creationflags=media.NO_WINDOW)
+            while proc.poll() is None:
+                time.sleep(0.4)
+                try:
+                    progress(int(Path(str(out) + ".progress").read_text(encoding="utf-8") or 0), "Listening to the recording")
+                except (OSError, ValueError):
+                    pass
+        if proc.returncode != 0 or not out.is_file():
+            try:
+                reason = Path(str(out) + ".error").read_text(encoding="utf-8").strip()[:200]
+            except OSError:
+                reason = ""
+            raise RuntimeError("Speech recognition stopped unexpectedly. " + reason if reason
+                               else "Speech recognition stopped unexpectedly. Details are in the log folder.")
         words = captions.word_ends(json.loads(out.read_text(encoding="utf-8")), project["duration"] or 1e9)
-        out.unlink(missing_ok=True)
+        for leftover in (out, Path(str(out) + ".progress")):
+            leftover.unlink(missing_ok=True)
         fresh = load(project_id)
         if script is not None:
             fresh["script"] = script
@@ -232,6 +211,7 @@ def start_translate(project_id, target):
     target = languages.valid(target)
     if target == source:
         raise ValueError("These captions are already in " + languages.LANGUAGES[target]["name"] + ".")
+    languages.check_translation(source, target)
     if not project["lines"]:
         raise ValueError("There are no captions to translate yet.")
     translator = get_translator()
@@ -273,6 +253,9 @@ def start_translate_text(text, source, target):
     if len(text) > 20000:
         raise ValueError("That text is too long. Translate it in parts.")
     source = languages.detect(text) if source == "auto" else languages.valid(source)
+    target = languages.valid(target)
+    if source != target:
+        languages.check_translation(source, target)
     translator = get_translator()
     if not translator.status()["ready"]:
         raise ValueError("Set up translation first.")
@@ -313,9 +296,20 @@ def start_export_video(project_id):
         name = f"{T.slug(Path(project['name']).stem, 'video')}_captioned_{time.strftime('%Y%m%d-%H%M%S')}.mp4"
         started = time.time()
         progress(0, "Drawing captions into the video")
-        frames = render.burn(source_path(project), OUTPUT / name, project["lines"], project["style"], project,
-                             lambda pct: progress(pct, "Drawing captions into the video"))
+        hardware = media.hardware_encoder() if profile_store.load().get("acceleration", "auto") != "off" else None
+        try:
+            frames = render.burn(source_path(project), OUTPUT / name, project["lines"], project["style"], project,
+                                 lambda pct: progress(pct, "Drawing captions into the video"), hardware)
+        except (RuntimeError, OSError):
+            if not hardware:
+                raise
+            progress(0, "Trying again on the processor")          # the hardware encoder failed on this video
+            for leftover in (OUTPUT / name, OUTPUT / (name + ".log")):
+                leftover.unlink(missing_ok=True)
+            hardware = None
+            frames = render.burn(source_path(project), OUTPUT / name, project["lines"], project["style"], project,
+                                 lambda pct: progress(pct, "Drawing captions into the video"))
         return {"file": name, "frames": frames, "took": round(time.time() - started, 1),
-                "megabytes": round(os.path.getsize(OUTPUT / name) / 1e6, 1)}
+                "megabytes": round(os.path.getsize(OUTPUT / name) / 1e6, 1), "encoder": media.LABELS[hardware]}
 
     return _start("export", work)

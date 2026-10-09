@@ -57,12 +57,21 @@ jobs:
             echo "## llama.cpp $LLAMA_TAG release files"
             gh api "repos/ggml-org/llama.cpp/releases/tags/$LLAMA_TAG" -q '.assets[] | "- \(.name) (\(.size) bytes)"'
           } | tee info.md
+          # Shown on the run page as well, so it can be read without the log.
+          echo "::notice title=Model and engine files::$(sed ':a;N;$!ba;s/%/%25/g;s/\n/%0A/g' info.md)"
 
       - name: Get llama-server (Linux, processor)
         run: |
           mkdir -p ../llama && cd ../llama
-          gh release download "$LLAMA_TAG" -R ggml-org/llama.cpp -p "*bin-ubuntu-x64.zip"
-          unzip -q ./*.zip
+          asset=$(gh api "repos/ggml-org/llama.cpp/releases/tags/$LLAMA_TAG" -q '.assets[].name' \
+                  | grep -i 'ubuntu' | grep -i 'x64' | grep -viE 'vulkan|rocm|cuda|hip|sycl|openvino' | head -n 1)
+          echo "Using $asset"
+          gh release download "$LLAMA_TAG" -R ggml-org/llama.cpp -p "$asset"
+          case "$asset" in
+            *.zip) unzip -q "$asset" ;;
+            *.tar.gz|*.tgz) tar xzf "$asset" ;;
+            *) echo "::error::Unexpected file $asset"; exit 1 ;;
+          esac
           server=$(find "$PWD" -name llama-server -type f | head -n 1)
           chmod +x "$server"
           echo "FACTOPIA_VOICE_LLAMA_SERVER=$server" >> "$GITHUB_ENV"

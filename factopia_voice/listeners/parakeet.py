@@ -10,7 +10,7 @@ from .base import Listener
 FOLDER = "sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8"
 ARCHIVE = ModelFile(FOLDER + ".tar.bz2",
                     "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/" + FOLDER + ".tar.bz2",
-                    482_000_000)
+                    482_468_385)
 PARTS = ("encoder.int8.onnx", "decoder.int8.onnx", "joiner.int8.onnx", "tokens.txt")
 CHUNK_SECONDS = 60
 

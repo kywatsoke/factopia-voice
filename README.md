@@ -1,72 +1,70 @@
 # Factopia Voice
 
-An offline voiceover, captions and translation studio for the Factopia Gist
-YouTube channel.
-Everything runs on your own computer: no subscription, no upload, no credits.
+Voiceovers, captions and translation, made on your own computer. Free, with
+no account, no subscription and no uploads. Made for the Factopia Gist
+YouTube channel and shared with friends.
 
 | Screen | What it does |
 | --- | --- |
-| **Studio** | Paste a script, get a voiceover (MP3 or WAV) in the channel voice, "Michael". |
+| **Studio** | Paste a script, get a voiceover (MP3 or WAV) in a natural English voice, "Michael". |
 | **Captions** | Import a video or audio file; speech becomes timed caption lines you can edit, style with any installed font, and export as a subtitle file (SRT) or burned into the video. |
-| **Translate** | English, Chinese and Burmese in every direction, for text, caption tracks and SRT files. |
-| **Library** | Every clip you made, with its script. Play, download, reuse, caption. |
+| **Translate** | English and Chinese, either way, for text, caption tracks and SRT files. |
+| **Library** | Every clip you made, with its script. Play, reuse, caption. |
 | **Pronunciation** | Fix how a word is said once; every later clip uses the fix. |
-| **Settings** | Target length, translation quality, folders, Quit. |
+| **Settings** | Translation, performance, storage, updates, about and licences. |
 
-Version 2.2.1. Runs on macOS (verified on an Apple silicon MacBook) and
-Windows (not yet verified). See [CHANGELOG.md](CHANGELOG.md) for what changed.
+Version 3.0.0-beta.1 (test version). See [CHANGELOG.md](CHANGELOG.md) for what changed.
 
 ---
 
-## Install and start
+## Download and install
 
-1. Open the [latest release](../../releases/latest) and download
-   `FactopiaVoice-<version>.zip`.
-2. Unzip it anywhere you like, for example in your Documents folder.
-3. Start it:
-   - **Mac:** double-click `Start Factopia Voice (Mac).command`.
-     The first time, macOS says it cannot verify the file, because it was
-     downloaded and is not from the App Store. Click **Done**, open
-     **System Settings > Privacy & Security**, scroll down, click
-     **Open Anyway** next to the file's name, and confirm. (On macOS 14 or
-     older: right-click the file, choose **Open**, then **Open** again.)
-   - **Windows:** double-click `Start Factopia Voice (Windows).bat`.
-     If a blue "Windows protected your PC" box appears, click
-     **More info**, then **Run anyway**.
+Go to [**Releases**](../../releases) and download the file for your computer:
 
-The first start needs the internet and takes a few minutes. It installs a
-small helper ([uv](https://docs.astral.sh/uv/)) that sets up Python for the
-app, then downloads the voice model (about 340 MB). After that the Studio
-works offline.
+| Computer | File |
+| --- | --- |
+| Mac with Apple silicon (M1 or later), macOS 13 or later | `Factopia-Voice-Mac.dmg` |
+| Windows 10 or 11, 64-bit | `Factopia-Voice-Windows-Setup.exe` |
 
-The app opens in its own window when Chrome or Edge is installed, otherwise
-in your default browser. Keep the black terminal window open while you work.
+**Mac**
+1. Open the `.dmg` and drag **Factopia Voice** onto **Applications**.
+2. Open Applications and double-click **Factopia Voice**.
+3. The first time only, macOS says it cannot check the app, because it is
+   shared free without a paid Apple certificate. Click **Done**, open
+   **System Settings > Privacy & Security**, scroll down, click
+   **Open Anyway** next to Factopia Voice, and confirm. The very first start
+   can take up to a minute while macOS checks the app; later starts are quick.
 
-### Extra one-time downloads
+**Windows**
+1. Double-click `Factopia-Voice-Windows-Setup.exe`.
+2. If a blue "Windows protected your PC" box appears, click **More info**,
+   then **Run anyway**. It installs for you only; no administrator password.
+3. Click **Next** and **Install**. Factopia Voice is in the Start menu and,
+   if you ticked it, on the desktop.
+
+**First start.** A welcome screen lists the free AI models the app uses.
+Tick **I agree** and press **Agree and continue**; the voice downloads
+(about 340 MB) and the Studio is ready. The other models download the first
+time you need them, inside the app:
 
 | Feature | Download | When |
 | --- | --- | --- |
-| Voiceover | Kokoro voice model, about 340 MB | First start |
-| Captions | Parakeet speech model, about 460 MB | First time you make captions |
-| Translation | The free [Ollama](https://ollama.com) app, then TranslateGemma: 3.3 GB (standard) or 8.1 GB (high quality) | When you press **Set up translation** |
+| Voiceover | Kokoro voice, about 340 MB | After the welcome screen |
+| Captions | Parakeet speech to text, about 480 MB | The first time you make captions |
+| Translation | TranslateGemma 4B by Google, about 2.5 GB | The first time you translate |
 
-For translation, install Ollama and open it once. Then press
-**Set up translation** on the Translate screen; the app checks Ollama and
-downloads the model. Choose standard or high quality in **Settings**.
+No sign-in anywhere. After a model is downloaded, its feature works offline.
 
-### What your computer needs
-
-- A Mac or Windows PC from the last several years. No graphics card needed.
-- About 3 GB of free memory for voiceovers and captions; 8 GB or more of
-  memory for translation (16 GB for the high-quality model).
-- About 2 GB of disk, plus 3.3 GB or 8.1 GB for a translation model.
+**What your computer needs:** 8 GB of memory (16 GB is comfortable for
+translation), and about 4 GB of free disk for all three models. A graphics
+chip or card is used when there is one, but none is needed.
 
 ## How to use it
 
 **Studio.** Paste the script and press **Generate voiceover**
 (or Ctrl/Cmd + Enter). A blank line adds a short pause; `[pause 0.8]` adds an
 exact pause in seconds. The word count and estimated length update as you
-type, against the target length set in Settings.
+type.
 
 **Captions.** Drop in a video or audio file, or press **Captions** on a
 Library clip. Pasting the script gives captions with your exact wording on
@@ -74,8 +72,8 @@ the recognised timings. Edit, split and join lines, pick a font and style,
 then export an SRT file or a captioned copy of the video. Speech recognition
 is English only for now.
 
-**Translate.** Paste text, pick the languages (or let the app detect the
-source) and press Translate. In Captions, **Translate captions** makes a new
+**Translate.** English and Chinese, either way. Paste text, pick the
+languages (or let the app detect the source) and press Translate. In Captions, **Translate captions** makes a new
 project in the other language with the same timings; the original stays as
 it was. You can also load an SRT subtitle file to translate it.
 
@@ -83,68 +81,73 @@ it was. You can also load an SRT subtitle file to translate it.
 to say it (for example `Turritopsis` → `tur-ih-TOP-sis`), press **Listen** to
 check, then **Save**.
 
-## Your files
+## Where your files are
 
-Everything you create is in the `data` folder inside the app folder:
+| What | Mac | Windows |
+| --- | --- | --- |
+| The files you make (voiceovers, subtitles, videos) | `Documents/Factopia Voice` | `Documents\Factopia Voice` |
+| Settings, captions projects, downloaded models | `~/Library/Application Support/Factopia Voice` | `%LOCALAPPDATA%\Factopia Voice` |
+| The app | `Applications/Factopia Voice` | `%LOCALAPPDATA%\Programs\Factopia Voice` |
 
-| Path | Contents |
-| --- | --- |
-| `data/output` | Voiceovers, subtitle files and captioned videos |
-| `data/projects` | Imported files and their captions, one folder per project |
-| `data/models` | Downloaded models (safe to keep between versions) |
-| `data/profile.json` | Voice, speed, pause, file type, translation quality |
-| `data/dictionary.json` | Pronunciation fixes |
-| `data/library.json` | Clip history |
+**Settings > Storage** shows how much each part uses, removes a model you no
+longer need, and can move the models to another drive.
 
-**Updating to a new version:** quit the app, unzip the new version, and move
-the `data` folder from the old app folder into the new one. Older data
-folders open unchanged. **Settings > Open clips folder** shows where the
-files are.
+**Coming from version 2.x?** On the welcome screen (or later in Settings),
+choose **Bring in your earlier work** and pick your old Factopia Voice
+folder. Your clips, captions projects, pronunciation fixes and downloaded
+models are copied in.
 
-**Another voice:** this version uses one voice. To try another, quit the app,
-open `data/profile.json` in a text editor and change `"voice"` (for example
-`am_fenrir`, `am_puck`, `af_heart`, `bm_george`), then start again.
+**Updating.** The app checks once a day for a new version (you can turn this
+off in Settings) and shows a link when there is one. Install the new version
+over the old one; your files and models stay.
+
+**Uninstalling.** Mac: drag the app to the Bin; to free the models' space,
+also delete `~/Library/Application Support/Factopia Voice`. Windows: Settings
+> Apps > Factopia Voice > Uninstall; it asks whether to remove the downloaded
+models too. Your captions projects, settings and the files in Documents are
+kept.
 
 ## When something goes wrong
 
 | What you see | What to do |
 | --- | --- |
-| "Port 8760 is being used by another program" | Another copy may be running: use Quit in it. Otherwise restart the computer. |
-| The window does not open | Go to http://127.0.0.1:8760 in a browser while the terminal window is open. |
-| Translate says Ollama is not running | Open the Ollama app, then press **Check again** on the Translate screen. |
-| Chinese or Burmese captions show empty boxes | The font has no letters for that language; the app refuses such fonts. Pick another font, or install one (Noto Sans SC, Noto Sans Myanmar). |
-| Mac: "Open Anyway" does not appear | In Terminal, run `xattr -dr com.apple.quarantine ` followed by a space, drag the app folder onto the Terminal window, and press Return. Then double-click the launcher again. |
-| Burmese captions cannot be burned into the video | On Mac and Windows the drawing library lacks the text shaping (FriBiDi) that Burmese needs, so the app refuses rather than draw scrambled letters. Export the SRT and add it in CapCut. A fix is next on the roadmap. |
-| The terminal shows an error and stops | Copy the text in the terminal window; it says what failed. |
+| Mac: "Open Anyway" does not appear | Open the app once first (it is refused), then look again in Privacy & Security. |
+| Translation is slow | The first sentence loads the model (up to a minute). After that, a sentence takes a few seconds with a graphics chip, longer on the processor alone. |
+| Chinese or Burmese captions show empty boxes | The font has no letters for that language; the app refuses such fonts. Pick another font. |
+| A download stopped | Press the button again; it continues where it stopped. |
+| Something else | **Settings > About > Open log folder**, and send the newest log file with a description. |
 
-Quit with **Settings > Quit Factopia Voice**, or close the terminal window.
+Quit with **Settings > Quit Factopia Voice**, or close the window.
 
 ---
 
 ## For development
 
-The app is one Python package with a web interface, served on
-`127.0.0.1` only. No build step; the launchers run the source as it is.
+One Python package with a web interface served on `127.0.0.1`, shown in its
+own window. It also runs from source, without installing:
 
 ```bash
 # Run from source (needs uv: https://docs.astral.sh/uv/)
-uv run --python 3.12 --no-project --with-requirements requirements.txt python -m factopia_voice
+uv run --python 3.12 --no-project --with-requirements requirements.txt python -m factopia_voice --browser
 
-# Run the tests (63 tests, a few seconds, no model downloads)
+# Run the tests (no model downloads)
 uv run --python 3.12 --no-project --with-requirements requirements.txt \
    --with-requirements requirements-dev.txt pytest -q
 ```
 
-Every push to GitHub runs the tests on Linux, Windows and macOS. **Actions > Release > Run workflow**
-builds the release zip and publishes it on the Releases page.
+Every push runs the tests on Linux, Windows and macOS. The **Installers**
+workflow builds the `.dmg` and `Setup.exe`, starts them on GitHub's Mac and
+Windows machines, and checks them. **Actions > Release > Run workflow**
+publishes a release with both installers.
 
 | Document | Read it for |
 | --- | --- |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | How the parts fit and where to add an engine, a listener or a translator |
-| [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) | Repository layout, settings, coding conventions, making a release |
-| [docs/TESTING.md](docs/TESTING.md) | Automated tests, the manual release checklist, what has been verified where |
+| [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) | Repository layout, settings, conventions, building installers, making a release |
+| [docs/TESTING.md](docs/TESTING.md) | Automated tests, the release checklist, what has been verified where |
 | [docs/DECISIONS.md](docs/DECISIONS.md) | Why each engine and design choice was made |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | Releases, backlog and the link to the live project plan |
+| [packaging/README.md](packaging/README.md) | How the installers are put together |
 | [docs/channel/](docs/channel/) | The Factopia Short package skill used to write each Short |
 | [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md) | Every model and library, its licence and what it allows |
 

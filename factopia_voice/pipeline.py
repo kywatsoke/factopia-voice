@@ -7,7 +7,7 @@ import traceback
 import numpy as np
 
 from . import audio, library, text as T
-from .config import CACHE, MODELS, OUTPUT, dictionary_store, ensure_dirs, profile_store
+from .config import CACHE, MODELS, OUTPUT, dictionary_store, ensure_dirs, models_problem, profile_store
 from .downloads import fetch, missing
 from .engines import create_engine
 from .translate import get_translator
@@ -25,9 +25,13 @@ class Studio:
         self.engine = None
         self.status = {"phase": "starting", "percent": 0, "detail": ""}
         self._lock = threading.Lock()
+        self._started = False
 
     # ---- start-up -------------------------------------------------------
     def start(self):
+        if self._started:
+            return
+        self._started = True
         threading.Thread(target=self._boot, daemon=True).start()
 
     def _set(self, phase, percent=0, detail=""):
@@ -36,6 +40,9 @@ class Studio:
     def _boot(self):
         try:
             ensure_dirs()
+            problem = models_problem()
+            if problem:
+                raise RuntimeError(problem)
             profile = profile_store.load()
             engine = create_engine(profile["engine"])
             if missing(engine.files(), MODELS):
@@ -61,6 +68,7 @@ class Studio:
         except Exception as e:
             traceback.print_exc()
             self._set("error", 0, f"{e}")
+            self._started = False          # a later start can try again
 
     def require_ready(self):
         if self.status["phase"] != "ready":
@@ -94,6 +102,8 @@ class Studio:
         voice = self.engine.voice(profile["voice"])
         spoken = script
         if target_language and target_language != voice.language:
+            from .languages import check_translation
+            check_translation(voice.language[:2], target_language)
             translator = get_translator()
             if not translator.status()["ready"]:
                 raise ValueError("Set up translation first.")

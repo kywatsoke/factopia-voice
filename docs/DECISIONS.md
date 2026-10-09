@@ -4,6 +4,77 @@ Each entry records what was chosen, why, and what it costs. Newest first.
 Add an entry whenever an engine, a licence or the shape of the app changes,
 so a later change can be judged against the reason for the first.
 
+## 2026-10-09 · Translation: English and Chinese only
+
+- **Chosen:** translation between English and Chinese, either way. Burmese
+  translation is removed from the Translate screen, caption translation and
+  the engines; Burmese captions (SRT import, editing, styling, burn-in)
+  stay.
+- **Why:** real samples from TranslateGemma 4B and 12B gave wrong key words
+  and stray words from other languages in Burmese, while Chinese was good.
+  The user, who reads Burmese, judged it not usable.
+- **Next for Burmese:** a natural, non-robotic Burmese voice is wanted
+  (decided the same day); no suitable offline voice is known yet.
+
+## 2026-10-09 · 3.0: installers for people who are not technical
+
+- **Chosen:** the same Python app packed with PyInstaller into a Mac `.app`
+  (Apple silicon, macOS 13+) in a `.dmg`, and a Windows 10/11 folder in a
+  per-user Inno Setup installer. Its own window through pywebview (WebKit on
+  Mac, WebView2 on Windows), with the browser as fallback. Built and checked
+  by GitHub Actions on real Mac and Windows machines.
+- **Why:** friends should install it like any app: no Python, no terminal, no
+  administrator password. Keeping one Python core and one web interface
+  avoids rewriting anything per platform.
+- **Cost:** installers of a few hundred MB; not signed with a paid
+  certificate, so each system warns once (Apple Developer ID US$99 a year
+  would remove the Mac warning). Intel Macs are not built.
+
+## 2026-10-09 · Translation built in: llama.cpp with a public model mirror
+
+- **Chosen:** llama.cpp's `llama-server` (MIT) ships inside the app and runs
+  TranslateGemma 4B as a GGUF file (Q4_K_M, 2.49 GB) downloaded from the
+  public Hugging Face mirror `mradermacher/translategemma-4b-it-GGUF`, pinned
+  by revision and SHA-256. Ollama remains an option in Settings.
+- **Why:** no second app and no Hugging Face sign-in (Google's own copy is
+  gated). Gemma's terms allow redistribution with the terms passed on; the
+  app shows them on the welcome screen before any download.
+- **Cost:** the mirror is a third party: the pinned checksum guards against a
+  changed file, and a different mirror can be pinned if it disappears.
+- **Quality, measured 9 October 2026** on GitHub's machines, same sentences:
+  both sizes translate English and Chinese well. Burmese is weak in both: the
+  4B mistranslated key words ("honey", "Venus") and let Greek and Chinese
+  words in; the 12B (7.3 GB, about 4x slower) was better on some lines but
+  still got "honey", "octopus" and "shark" wrong and let an Arabic word in.
+  4B stays the default (the user's choice); Burmese output needs a Burmese
+  speaker to check it before publishing.
+
+## 2026-10-09 · FriBiDi built from source and shipped with the app
+
+- **Chosen:** FriBiDi (LGPL-2.1-or-later) built in CI and loaded before
+  Pillow looks for it (`factopia_voice/shaping.py`).
+- **Why:** Pillow's Mac and Windows wheels enable Burmese shaping (raqm)
+  only when FriBiDi can be found, and they do not include it. Verified in CI:
+  raqm is on in the packed Mac app.
+
+## 2026-10-09 · Graphics chip first, processor always as fallback
+
+- **Chosen:** translation tries the graphics chip (Metal on Mac, Vulkan on
+  Windows) and restarts on the processor if that fails; video export tries
+  the hardware encoder (VideoToolbox, NVENC, Quick Sync, AMF) after a test
+  encode, with x264 as fallback. Voice and speech to text stay on the
+  processor: they are already faster than real time.
+- **Why:** speed where it matters, without a broken driver ever stopping work.
+
+## 2026-10-09 · Files in the usual per-user places
+
+- **Chosen:** the installed app keeps settings, projects and models in
+  Application Support (Mac) or `%LOCALAPPDATA%` (Windows), and puts the files
+  people make in Documents/Factopia Voice. Running from source keeps the 2.x
+  `data/` folder.
+- **Why:** an installed app cannot write inside itself; Documents is where
+  people look; large models must not sync with a roaming profile.
+
 ## 2026-10-09 · Open source (GPL-3.0-or-later) in a public repository
 
 - **Chosen:** the app's own code is licensed GPL-3.0-or-later and the
