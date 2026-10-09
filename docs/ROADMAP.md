@@ -20,7 +20,7 @@ This file is a snapshot of it for the repository, taken 9 October 2026.
 | --- | --- | --- |
 | Run on Windows | 2.0 to 2.2 | Open: the tests run on Windows in CI; nobody has used it there yet |
 | Real-model translation test on the Mac | 2.2 | Open |
-| Burmese burned-in captions on Windows: supply FriBiDi so Pillow can shape Burmese (LGPL, loaded at run time) | 2.2.x | Open: found by CI on 9 Oct 2026; SRT export works meanwhile |
+| Burmese burned-in captions on Mac and Windows: supply FriBiDi so Pillow can shape Burmese (LGPL, loaded at run time) | 2.2.x | Next: found by CI on 9 Oct 2026; SRT export works meanwhile |
 | Judge Burmese and Chinese output; choose 4B or 12B | 2.2 | Open |
 | Voice tone improvement (rated about 60%) | Next | Not started |
 | Rename the app (it is more than a voice now) | Next | Not started |

@@ -56,7 +56,10 @@ so a later change can be judged against the reason for the first.
   through ffmpeg. The preview and the export share the code.
 - **Why:** any installed font works, the preview matches the export exactly,
   and Chinese and Burmese can be checked for missing letters before export.
-- **Cost:** burning in is slower than ffmpeg's own subtitle filter.
+- **Cost:** burning in is slower than ffmpeg's own subtitle filter. Burmese
+  needs Pillow's raqm text shaping, which its Mac and Windows wheels only
+  enable when the FriBiDi library is present (found 9 Oct 2026); until it is
+  supplied, Burmese burn-in is refused there.
 
 ## 2026-10-07 · ffmpeg bundled through imageio-ffmpeg
 

@@ -18,7 +18,7 @@ Repository set up on GitHub, with documentation and automatic testing.
   Burmese file name) are called `captions_…` or `video_…` instead of
   `voiceover_…`.
 - Burmese captions are no longer drawn scrambled on computers whose Pillow
-  lacks text shaping (Windows today): the preview and video export explain
+  lacks text shaping (Mac and Windows today): the preview and video export explain
   the problem and point to the SRT export instead.
 - Speech recognition passes text as UTF-8, so error messages with non-English
   text cannot break it on Windows.
