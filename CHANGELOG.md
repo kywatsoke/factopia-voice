@@ -17,10 +17,14 @@ Repository set up on GitHub, with documentation and automatic testing.
 - Exports from a project whose name has no English letters (a Chinese or
   Burmese file name) are called `captions_…` or `video_…` instead of
   `voiceover_…`.
+- Burmese captions are no longer drawn scrambled on computers whose Pillow
+  lacks text shaping (Windows today): the preview and video export explain
+  the problem and point to the SRT export instead.
 - Speech recognition passes text as UTF-8, so error messages with non-English
   text cannot break it on Windows.
 - The licence register is now `THIRD_PARTY_LICENSES.md`; the app itself is
   marked private, all rights reserved (`LICENSE`).
+- Automated tests: 63 (was 61).
 
 ## 2.2.0 - 2026-10-09
 

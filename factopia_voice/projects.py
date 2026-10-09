@@ -306,6 +306,8 @@ def start_export_video(project_id):
         raise ValueError("This project has sound only, so there is no picture to put captions on. Export the subtitle file instead.")
     if not project["lines"]:
         raise ValueError("There are no captions to export yet.")
+    if not all(render.can_draw(line["text"]) for line in project["lines"]):
+        raise ValueError(render.SHAPING_MISSING)
 
     def work(progress):
         name = f"{T.slug(Path(project['name']).stem, 'video')}_captioned_{time.strftime('%Y%m%d-%H%M%S')}.mp4"

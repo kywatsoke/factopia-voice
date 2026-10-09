@@ -200,7 +200,8 @@
       const body = { id, style: C.p.style, text: line ? line.text : "Your captions will look like this", t: line ? (line.start + line.end) / 2 : 0 };
       try {
         const r = await fetch("/api/captions/preview", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-        if (!r.ok || !C.p || C.p.id !== id) return;
+        if (!C.p || C.p.id !== id) return;
+        if (!r.ok) { const e = await r.json().catch(() => ({})); if (e.error) say("capExportStatus", e.error, "err"); return; }
         const url = URL.createObjectURL(await r.blob());
         $("capPreview").src = url; if (C.prevUrl) URL.revokeObjectURL(C.prevUrl); C.prevUrl = url;
       } catch {}

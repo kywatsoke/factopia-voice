@@ -114,6 +114,7 @@ open `data/profile.json` in a text editor and change `"voice"` (for example
 | Translate says Ollama is not running | Open the Ollama app, then press **Check again** on the Translate screen. |
 | Chinese or Burmese captions show empty boxes | The font has no letters for that language; the app refuses such fonts. Pick another font, or install one (Noto Sans SC, Noto Sans Myanmar). |
 | Mac: "Open Anyway" does not appear | In Terminal, run `xattr -dr com.apple.quarantine ` followed by a space, drag the app folder onto the Terminal window, and press Return. Then double-click the launcher again. |
+| Windows: Burmese captions cannot be burned into the video | Pillow on Windows lacks the FriBiDi text-shaping library that Burmese needs, so the app refuses rather than draw scrambled letters. Export the SRT and add it in CapCut. A fix is on the roadmap. |
 | The terminal shows an error and stops | Copy the text in the terminal window; it says what failed. |
 
 Quit with **Settings > Quit Factopia Voice**, or close the terminal window.
@@ -129,7 +130,7 @@ The app is one Python package with a web interface, served on
 # Run from source (needs uv: https://docs.astral.sh/uv/)
 uv run --python 3.12 --no-project --with-requirements requirements.txt python -m factopia_voice
 
-# Run the tests (62 tests, a few seconds, no model downloads)
+# Run the tests (63 tests, a few seconds, no model downloads)
 uv run --python 3.12 --no-project --with-requirements requirements.txt \
    --with-requirements requirements-dev.txt pytest -q
 ```

@@ -2,10 +2,11 @@
 video, so what you see in the editor is what the export contains."""
 import math
 import os
+import re
 import subprocess
 
 import numpy as np
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, features
 
 from . import fonts, media
 
@@ -70,8 +71,23 @@ def _wrap(draw, text, font, stroke, limit):
     return lines
 
 
+# Burmese letters are reordered and joined as they are drawn ("shaping"), which
+# needs Pillow's raqm layout. Pillow on Windows has it only when the FriBiDi
+# library is installed; without it the captions would come out scrambled.
+_NEEDS_SHAPING = re.compile("[\u1000-\u109f\ua9e0-\ua9ff\uaa60-\uaa7f]")
+SHAPING_MISSING = ("Burmese captions cannot be drawn correctly on this computer yet, because its "
+                   "text-shaping library (FriBiDi) is missing. Export the subtitle file (SRT) instead "
+                   "and add it in your video editor.")
+
+
+def can_draw(text):
+    return not _NEEDS_SHAPING.search(text) or features.check("raqm")
+
+
 def caption_image(text, style, width, height):
     """Return (RGBA image of one caption, (left, top) where it goes on the frame)."""
+    if not can_draw(text):
+        raise ValueError(SHAPING_MISSING)
     style = clean_style(style)
     scale = width / 1080
     info = fonts.find(style["font"])

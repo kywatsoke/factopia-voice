@@ -5,7 +5,7 @@ run on the release zip before a version is called done.
 
 ## Automated tests
 
-62 tests, run with pytest (command in [DEVELOPMENT.md](DEVELOPMENT.md)).
+63 tests, run with pytest (command in [DEVELOPMENT.md](DEVELOPMENT.md)).
 
 | File | Covers |
 | --- | --- |
@@ -59,8 +59,9 @@ Note the date, machine and result in the verification record.
 
 | Version | Date | Machine | Result |
 | --- | --- | --- | --- |
+| 2.2.1 | 9 Oct 2026 | GitHub Actions: Ubuntu, Windows Server | Automated tests pass (Windows: 61 passed, 1 skipped). Found: Pillow on Windows has no raqm, so Burmese burn-in is refused there |
 | 2.2.0 | 9 Oct 2026 | Linux cloud, stand-in translation model | Automated tests and interface pass. Real TranslateGemma not yet run |
 | 2.1.0 | 7 Oct 2026 | MacBook, Apple silicon | Voiceover, speech to text, exact-script captions, SRT and burned-in export pass |
 | 2.0.0 | 7 Oct 2026 | MacBook, Apple silicon | Voiceover from a clean folder passes |
 | 2.0.0 | 6 Oct 2026 | Linux cloud | Pass |
-| any | | Windows | Not yet run |
+| any | | Windows, by hand | Not yet run |

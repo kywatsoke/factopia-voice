@@ -1,3 +1,5 @@
+import pytest
+
 from factopia_voice import captions as C
 from factopia_voice import languages as L
 
@@ -58,3 +60,14 @@ def test_spread_keeps_short_text_whole_and_splits_long_text_by_clause():
     assert all(a["end"] == b["start"] for a, b in zip(out, out[1:]))
     my = C.spread("ပျားရည်သည် ဘယ်တော့မှ မပုပ်ပါ၊ သိပ္ပံပညာရှင်များက အီဂျစ်ဂူသင်္ချိုင်းများတွင် နှစ်ပေါင်းသုံးထောင်ရှိ ပျားရည်ကို တွေ့ရှိခဲ့သည်။", 0, 8, "my")
     assert len(my) >= 2 and all(not l["text"].startswith(("်", "္", "ာ")) for l in my)
+
+
+def test_burmese_is_refused_where_it_cannot_be_shaped(monkeypatch):
+    from factopia_voice import render
+    monkeypatch.setattr(render.features, "check", lambda name: False)
+    assert render.can_draw("Honey never spoils") and render.can_draw("蜂蜜永远不会变质")
+    assert not render.can_draw("ပျားရည်")
+    with pytest.raises(ValueError, match="SRT"):
+        render.caption_image("ပျားရည်", render.DEFAULT_STYLE, 1080, 1920)
+    monkeypatch.setattr(render.features, "check", lambda name: True)
+    assert render.can_draw("ပျားရည်")
