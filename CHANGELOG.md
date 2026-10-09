@@ -13,7 +13,8 @@ technical. A test version, published as a pre-release.
 - The app opens in its own window. Opening it again brings the window forward.
 - First start: a welcome screen lists the AI models and their terms, with one
   "Agree and continue". Models download inside the app when first needed,
-  with progress, resume after a broken connection, and a checksum check.
+  with progress and resume after a broken connection; the translation model
+  is also checked against its published checksum.
 - Translation is built in: TranslateGemma 4B runs on llama.cpp inside the
   app, downloaded without any sign-in. Ollama stays available as an option.
 - Burmese captions are drawn correctly on Mac and Windows: the app now

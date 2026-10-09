@@ -13,6 +13,7 @@ from pathlib import Path
 
 from ..languages import valid
 from .base import Translator, clean_output, prompt_for
+from ..net import open_url
 
 BASE = os.environ.get("FACTOPIA_VOICE_OLLAMA", "http://127.0.0.1:11434").rstrip("/")
 MODELS = {"standard": ("translategemma:4b", "3.3 GB"), "high": ("translategemma:12b", "8.1 GB")}
@@ -21,7 +22,7 @@ MODELS = {"standard": ("translategemma:4b", "3.3 GB"), "high": ("translategemma:
 def _request(path, body=None, timeout=10):
     data = None if body is None else json.dumps(body).encode()
     req = urllib.request.Request(BASE + path, data=data, headers={"Content-Type": "application/json"})
-    return urllib.request.urlopen(req, timeout=timeout)
+    return open_url(req, timeout=timeout)
 
 
 def find_ollama():

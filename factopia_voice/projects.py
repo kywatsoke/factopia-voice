@@ -296,10 +296,12 @@ def start_export_video(project_id):
         try:
             frames = render.burn(source_path(project), OUTPUT / name, project["lines"], project["style"], project,
                                  lambda pct: progress(pct, "Drawing captions into the video"), hardware)
-        except RuntimeError:
+        except (RuntimeError, OSError):
             if not hardware:
                 raise
             progress(0, "Trying again on the processor")          # the hardware encoder failed on this video
+            for leftover in (OUTPUT / name, OUTPUT / (name + ".log")):
+                leftover.unlink(missing_ok=True)
             hardware = None
             frames = render.burn(source_path(project), OUTPUT / name, project["lines"], project["style"], project,
                                  lambda pct: progress(pct, "Drawing captions into the video"))

@@ -72,17 +72,49 @@ begin
               or HasWebView2(HKCU, 'Software\Microsoft\EdgeUpdate\Clients\{#WebView2Key}'));
 end;
 
+function MovedModelsFolder(Data: String): String;
+{ The folder the models were moved to in Settings > Storage, read from locations.json. }
+var
+  Text: AnsiString;
+  S: String;
+  P: Integer;
+begin
+  Result := '';
+  if LoadStringFromFile(Data + '\locations.json', Text) then
+  begin
+    S := String(Text);
+    P := Pos('"models": "', S);
+    if P > 0 then
+    begin
+      S := Copy(S, P + Length('"models": "'), Length(S));
+      P := Pos('"', S);
+      if P > 0 then
+      begin
+        S := Copy(S, 1, P - 1);
+        StringChangeEx(S, '\\', '\', True);
+        Result := S;
+      end;
+    end;
+  end;
+end;
+
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 var
-  Data: String;
+  Data, Moved: String;
 begin
   if CurUninstallStep = usPostUninstall then
   begin
     Data := ExpandConstant('{localappdata}\{#AppName}');
-    if DirExists(Data) then
-      if SuppressibleMsgBox('Also remove the downloaded AI models and the settings (' + Data + ')?' + #13#10 + #13#10 +
-         'Your own files in Documents\Factopia Voice are kept either way.',
+    if DirExists(Data + '\models') or (MovedModelsFolder(Data) <> '') then
+      if SuppressibleMsgBox('Also remove the downloaded AI models? They take a few GB and can be downloaded again.' + #13#10 + #13#10 +
+         'Your captions projects, settings and the files in Documents\Factopia Voice are kept either way.',
          mbConfirmation, MB_YESNO, IDNO) = IDYES then
-        DelTree(Data, True, True, True);
+      begin
+        Moved := MovedModelsFolder(Data);
+        if (Moved <> '') and DirExists(Moved) then
+          DelTree(Moved, True, True, True);
+        DelTree(Data + '\models', True, True, True);
+        DelTree(Data + '\cache', True, True, True);
+      end;
   end;
 end;

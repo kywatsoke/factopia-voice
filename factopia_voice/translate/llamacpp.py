@@ -24,6 +24,7 @@ from ..config import LOGS, MODELS, profile_store
 from ..downloads import fetch_one
 from ..languages import valid
 from .base import Translator, clean_output, prompt_for
+from ..net import open_url
 
 TERMS_URL = "https://ai.google.dev/gemma/terms"
 POLICY_URL = "https://ai.google.dev/gemma/prohibited_use_policy"
@@ -52,12 +53,13 @@ MODELS_AVAILABLE = {
                      "d37868f759d2f817a43d28dd80cf9f982ffa62fd", 2_489_909_760,
                      "81200d03e843d2ec1ece6eeafe7d13cb6e5211e1fcd336ade55790b683a08330", "TranslateGemma 4B"),
     "high": GGUF("translategemma-12b-it.Q4_K_M.gguf", "mradermacher/translategemma-12b-it-GGUF",
-                 "main", 0, "", "TranslateGemma 12B"),
+                 "41d7c8aa650b26791225ad9d0597e674e680da96", 7_300_794_112,
+                 "b7aac4b4be7ab0c49b6556c29c4467e74313df7f1e95d9f9676bb2adf0afa528", "TranslateGemma 12B"),
 }
 
 
 def size_label(n):
-    return f"{n / 1e9:.1f} GB" if n else "about 2.5 GB"
+    return f"{n / 1e9:.1f} GB" if n else "a few GB"
 
 
 def server_command():
@@ -81,6 +83,71 @@ def server_command():
     return [found] if found else None
 
 
+# On macOS and Linux, llama-server runs under a tiny shell that ends it as soon
+# as the app is gone, however the app ends (Quit, Cmd+Q, a crash, a closed
+# terminal). On Windows, a job object does the same.
+_WATCH = """
+"$@" &
+child=$!
+trap 'kill $child 2>/dev/null; wait $child 2>/dev/null; exit 0' TERM INT HUP
+while kill -0 "$FV_PARENT" 2>/dev/null && kill -0 $child 2>/dev/null; do sleep 1; done
+kill $child 2>/dev/null
+wait $child
+"""
+_JOB = None
+
+
+def _spawn(args, log):
+    if sys.platform == "win32":
+        proc = subprocess.Popen(args, stdout=log, stderr=log, stdin=subprocess.DEVNULL,
+                                creationflags=subprocess.CREATE_NO_WINDOW)
+        _end_with_app(proc)
+        return proc
+    env = {**os.environ, "FV_PARENT": str(os.getpid())}
+    return subprocess.Popen(["/bin/sh", "-c", _WATCH, "factopia-translation"] + list(args), stdout=log, stderr=log,
+                            stdin=subprocess.DEVNULL, env=env, start_new_session=True)
+
+
+def _end_with_app(proc):
+    """Windows: put the process in a job that ends it when the app's last handle
+    to the job closes, which happens however the app ends."""
+    global _JOB
+    try:
+        import ctypes
+        from ctypes import wintypes
+
+        class IoCounters(ctypes.Structure):
+            _fields_ = [(n, ctypes.c_ulonglong) for n in ("Read", "Write", "Other", "ReadBytes", "WriteBytes", "OtherBytes")]
+
+        class Basic(ctypes.Structure):
+            _fields_ = [("PerProcessUserTimeLimit", ctypes.c_int64), ("PerJobUserTimeLimit", ctypes.c_int64),
+                        ("LimitFlags", wintypes.DWORD), ("MinimumWorkingSetSize", ctypes.c_size_t),
+                        ("MaximumWorkingSetSize", ctypes.c_size_t), ("ActiveProcessLimit", wintypes.DWORD),
+                        ("Affinity", ctypes.c_size_t), ("PriorityClass", wintypes.DWORD),
+                        ("SchedulingClass", wintypes.DWORD)]
+
+        class Extended(ctypes.Structure):
+            _fields_ = [("BasicLimitInformation", Basic), ("IoInfo", IoCounters),
+                        ("ProcessMemoryLimit", ctypes.c_size_t), ("JobMemoryLimit", ctypes.c_size_t),
+                        ("PeakProcessMemoryUsed", ctypes.c_size_t), ("PeakJobMemoryUsed", ctypes.c_size_t)]
+
+        k32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        k32.CreateJobObjectW.restype = wintypes.HANDLE
+        k32.CreateJobObjectW.argtypes = [ctypes.c_void_p, wintypes.LPCWSTR]
+        k32.SetInformationJobObject.argtypes = [wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p, wintypes.DWORD]
+        k32.AssignProcessToJobObject.argtypes = [wintypes.HANDLE, wintypes.HANDLE]
+        if _JOB is None:
+            job = k32.CreateJobObjectW(None, None)
+            info = Extended()
+            info.BasicLimitInformation.LimitFlags = 0x2000          # JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+            if job and k32.SetInformationJobObject(job, 9, ctypes.byref(info), ctypes.sizeof(info)):
+                _JOB = job                                           # 9 = JobObjectExtendedLimitInformation
+        if _JOB:
+            k32.AssignProcessToJobObject(_JOB, int(proc._handle))
+    except Exception as e:                       # the engine still works; it may outlive a crash
+        print(f"Could not tie the translation engine to the app: {e}", flush=True)
+
+
 def _free_port():
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
@@ -100,18 +167,19 @@ class _Server:
         self.lock = threading.RLock()
         self.timer = None
         self.log = None
+        self.gpu_failed = False     # the graphics chip failed while translating: processor until the app restarts
 
     def running(self):
         return self.proc is not None and self.proc.poll() is None
 
     def _get(self, path, timeout=3):
-        with urllib.request.urlopen(f"http://127.0.0.1:{self.port}{path}", timeout=timeout) as r:
+        with open_url(f"http://127.0.0.1:{self.port}{path}", timeout=timeout) as r:
             return r.status, r.read()
 
     def post(self, path, body, timeout=600):
         req = urllib.request.Request(f"http://127.0.0.1:{self.port}{path}", data=json.dumps(body).encode(),
                                      headers={"Content-Type": "application/json"})
-        with urllib.request.urlopen(req, timeout=timeout) as r:
+        with open_url(req, timeout=timeout) as r:
             return json.loads(r.read())
 
     def _launch(self, model_path, gpu):
@@ -127,9 +195,7 @@ class _Server:
         log_path = LOGS / "translation-engine.log"
         start = log_path.stat().st_size if log_path.exists() else 0
         self.log = open(log_path, "ab")
-        flags = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
-        self.proc = subprocess.Popen(args, stdout=self.log, stderr=self.log, stdin=subprocess.DEVNULL,
-                                     creationflags=flags, start_new_session=sys.platform != "win32")
+        self.proc = _spawn(args, self.log)
         deadline = time.time() + 240
         while time.time() < deadline:
             if self.proc.poll() is not None:
@@ -145,15 +211,17 @@ class _Server:
         return False
 
     def ensure(self, model_path, allow_gpu):
+        allow_gpu = allow_gpu and not self.gpu_failed
         with self.lock:
-            self._touch()
             if self.running() and self.model == str(model_path) and self.allowed == allow_gpu:
+                self._touch()
                 return
             self.stop()
             for gpu in ([True, False] if allow_gpu else [False]):
                 if self._launch(model_path, gpu):
                     self.model, self.allowed = str(model_path), allow_gpu
                     self.mode = "gpu" if gpu and self.device else "cpu"
+                    self._touch()                 # stop after IDLE_SECONDS without a translation
                     return
                 self.stop()
             raise RuntimeError("The translation engine could not start. Details are in the log folder "
@@ -177,7 +245,15 @@ class _Server:
                     try:
                         self.proc.wait(timeout=10)
                     except subprocess.TimeoutExpired:
-                        self.proc.kill()
+                        if sys.platform == "win32":
+                            self.proc.kill()
+                        else:
+                            import signal
+                            try:
+                                os.killpg(self.proc.pid, signal.SIGKILL)   # the watcher and the engine
+                            except OSError:
+                                pass
+                        self.proc.wait(timeout=5)
                 self.proc = None
             if self.log:
                 self.log.close()
@@ -250,18 +326,26 @@ class BuiltinTranslator(Translator):
         body = {"prompt": f"<start_of_turn>user\n{prompt_for(text, source, target)}<end_of_turn>\n<start_of_turn>model\n",
                 "n_predict": max(256, len(text) * 6), "temperature": 0, "top_k": 1, "cache_prompt": True,
                 "stop": ["<end_of_turn>", "<start_of_turn>"]}
-        for attempt in (1, 2):
+        for attempt in (1, 2, 3):
             SERVER.ensure(self.path, allow_gpu)
+            on_gpu = SERVER.mode == "gpu"
             try:
                 reply = SERVER.post("/completion", body)
                 return clean_output(reply.get("content", ""))
             except urllib.error.HTTPError as e:
                 detail = e.read().decode("utf-8", "replace")[:200]
-                raise RuntimeError(f"Translation failed: {detail}")
+                if not on_gpu:
+                    raise RuntimeError(f"Translation failed: {detail}")
+                print(f"Translation failed on the graphics chip ({e.code}: {detail}); using the processor.", flush=True)
+                SERVER.gpu_failed = True         # a graphics driver problem: the processor from now on
+                SERVER.stop()
             except (urllib.error.URLError, OSError):
-                SERVER.stop()                    # the engine stopped; start it once more
-                if attempt == 2:
+                SERVER.stop()                    # the engine stopped; start it again
+                if on_gpu and attempt >= 2:
+                    SERVER.gpu_failed = True     # it keeps stopping on the graphics chip
+                if attempt == 3:
                     raise RuntimeError("The translation engine stopped responding. Try again.")
+        raise RuntimeError("The translation engine stopped responding. Try again.")
 
     def stop(self):
         SERVER.stop()

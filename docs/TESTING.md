@@ -5,7 +5,7 @@ run on the release zip before a version is called done.
 
 ## Automated tests
 
-70 tests, run with pytest (command in [DEVELOPMENT.md](DEVELOPMENT.md)).
+75 tests, run with pytest (command in [DEVELOPMENT.md](DEVELOPMENT.md)).
 
 | File | Covers |
 | --- | --- |
@@ -17,7 +17,8 @@ run on the release zip before a version is called done.
 | `test_render.py` | Fonts and letter coverage, caption drawing and wrapping (Chinese and Burmese too), video burn-in |
 | `test_languages.py` | Language detection, Burmese syllables, SRT reading, sentence and clause splitting |
 | `test_translate.py` | The Ollama translator against a fake Ollama: setup, official prompt, quality choice, caption and text translation, 2.1 projects |
-| `test_builtin_translator.py` | The built-in engine against a fake llama-server: download step, official prompt, graphics chip first, processor fallback without restarting per sentence, resumable checked downloads |
+| `test_builtin_translator.py` | The built-in engine against a fake llama-server: download step, official prompt, graphics chip first, processor fallback at start and during translation, idle stop, the engine ending with the app, downloads that resume and are checked |
+| `test_storage.py` | Bringing in 2.x work without replacing newer files |
 
 A fake voice engine (`tests/conftest.py`), a fake Ollama server and a fake
 llama-server (`tests/fake_llama_server.py`) stand in
@@ -93,6 +94,7 @@ Voice. Note the date, machine and result in the verification record.
 | --- | --- | --- | --- |
 | 3.0.0-beta.1 | 9 Oct 2026 | GitHub Actions: macOS (Apple silicon), Windows Server | See the Installers run; filled in when the beta is published |
 | 3.0.0-beta.1 | 9 Oct 2026 | GitHub Actions: Ubuntu, real TranslateGemma 4B | English and Chinese good; Burmese poor (wrong words, stray Greek and Chinese tokens) |
+| 3.0.0-beta.1 | 9 Oct 2026 | GitHub Actions: Ubuntu, real TranslateGemma 12B | English and Chinese good; Burmese better than 4B on some lines but still wrong key words and a stray Arabic word; about 4x slower |
 | 2.2.1 | 9 Oct 2026 | GitHub Actions: Ubuntu, Windows Server, macOS | Automated tests pass on all three. Found: Pillow's Mac and Windows wheels have no raqm text shaping, so Burmese burn-in is refused there (Linux has it) |
 | 2.2.0 | 9 Oct 2026 | Linux cloud, stand-in translation model | Automated tests and interface pass. Real TranslateGemma not yet run |
 | 2.1.0 | 7 Oct 2026 | MacBook, Apple silicon | Voiceover, speech to text, exact-script captions, SRT and burned-in export pass |

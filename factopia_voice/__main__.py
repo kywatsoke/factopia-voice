@@ -5,6 +5,7 @@
 
 The installed app runs the same code. It also starts itself with
 --fv-worker (helper processes) and --self-test (build checks)."""
+import json
 import os
 import socket
 import subprocess
@@ -12,6 +13,8 @@ import sys
 import threading
 import time
 import urllib.request
+
+from .net import open_url
 
 
 def _redirect_output():
@@ -30,7 +33,7 @@ def _redirect_output():
 
 def _answering(port):
     try:
-        with urllib.request.urlopen(f"http://127.0.0.1:{port}/api/state", timeout=1.5) as r:
+        with open_url(f"http://127.0.0.1:{port}/api/state", timeout=1.5) as r:
             return b'"version"' in r.read()
     except Exception:
         return False
@@ -77,7 +80,7 @@ def open_browser_window(url):
 def _post(url):
     try:
         req = urllib.request.Request(url, data=b"{}", headers={"Content-Type": "application/json"})
-        urllib.request.urlopen(req, timeout=2).close()
+        open_url(req, timeout=2).close()
     except Exception:
         pass
 
@@ -121,10 +124,17 @@ def main(argv=None):
         _redirect_output()
     from . import __version__
 
-    if _answering(PORT):
-        print("Factopia Voice is already running; bringing its window forward.")
-        _post(f"http://127.0.0.1:{PORT}/api/focus")
-        return 0
+    from .config import DATA
+    running_file = DATA / "running.json"
+    try:
+        last_port = int(json.loads(running_file.read_text(encoding="utf-8")).get("port") or 0)
+    except (OSError, ValueError, AttributeError):
+        last_port = 0
+    for port in dict.fromkeys(p for p in (PORT, last_port) if p):
+        if _answering(port):
+            print("Factopia Voice is already running; bringing its window forward.")
+            _post(f"http://127.0.0.1:{port}/api/focus")
+            return 0
 
     from . import shell, storage
     from .config import ensure_dirs
@@ -140,6 +150,10 @@ def main(argv=None):
     serving = threading.Thread(target=server.serve_forever, daemon=True)
     serving.start()
     print(f"Factopia Voice {__version__} is running at {url}", flush=True)
+    try:                                     # so a second start finds this copy even on another port
+        running_file.write_text(json.dumps({"port": server.server_address[1], "pid": os.getpid()}), encoding="utf-8")
+    except OSError:
+        pass
     begin()
 
     want_window = "--browser" not in argv and os.environ.get("FACTOPIA_VOICE_WINDOW") != "browser"
@@ -163,6 +177,10 @@ def main(argv=None):
     finally:
         stop_translation()
         server.shutdown()
+        try:
+            running_file.unlink()
+        except OSError:
+            pass
         print("Factopia Voice stopped.", flush=True)
     return 0
 

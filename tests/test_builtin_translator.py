@@ -96,6 +96,7 @@ def test_engine_choice(builtin, monkeypatch):
 class RangeFile(BaseHTTPRequestHandler):
     data = b""
     requests = []
+    cut = 0             # when set, the first response stops after this many bytes
 
     def log_message(self, *a):
         pass
@@ -107,7 +108,14 @@ class RangeFile(BaseHTTPRequestHandler):
         body = self.data[start:]
         self.send_response(206 if rng else 200)
         self.send_header("Content-Length", str(len(body)))
+        if rng:
+            self.send_header("Content-Range", f"bytes {start}-{len(self.data) - 1}/{len(self.data)}")
         self.end_headers()
+        if RangeFile.cut:
+            body, RangeFile.cut = body[:RangeFile.cut], 0
+            self.wfile.write(body)
+            self.close_connection = True
+            return
         self.wfile.write(body)
 
 
@@ -115,6 +123,7 @@ class RangeFile(BaseHTTPRequestHandler):
 def file_server():
     RangeFile.data = bytes(range(256)) * 4000
     RangeFile.requests = []
+    RangeFile.cut = 0
     server = HTTPServer(("127.0.0.1", 0), RangeFile)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     yield f"http://127.0.0.1:{server.server_address[1]}/model.gguf"
@@ -143,3 +152,57 @@ def test_setup_downloads_the_model_and_notes_the_terms(builtin, monkeypatch, fil
     assert t.installed() and steps[-1] == 100
     about = (t.path.parent / "ABOUT.txt").read_text(encoding="utf-8")
     assert "ai.google.dev/gemma/terms" in about and spec.repo in about
+
+
+def test_download_that_ends_early_continues_instead_of_finishing(tmp_path, file_server, monkeypatch):
+    monkeypatch.setattr(downloads.time, "sleep", lambda s: None)
+    data = RangeFile.data
+    RangeFile.cut = 400_000
+    dest = tmp_path / "voice.onnx"
+    downloads.fetch_one(file_server, dest)                   # size unknown to the caller
+    assert dest.read_bytes() == data and RangeFile.requests == [None, "bytes=400000-"]
+
+
+def test_engine_stops_when_idle_after_the_first_translation(builtin):
+    t, _ = builtin
+    t.path.write_bytes(b"model")
+    t.translate("Hi", "en", "zh")
+    assert llamacpp.SERVER.timer is not None and llamacpp.SERVER.timer.is_alive()
+
+
+def test_graphics_failure_while_translating_moves_to_the_processor(builtin, monkeypatch):
+    t, log = builtin
+    t.path.write_bytes(b"model")
+    monkeypatch.setenv("FAKE_LLAMA_FAIL_GPU_TRANSLATE", "1")
+    monkeypatch.setattr(llamacpp.SERVER, "gpu_failed", False)
+    assert t.translate("Hi", "en", "zh") == "[Chinese] Hi"
+    assert llamacpp.SERVER.mode == "cpu" and llamacpp.SERVER.gpu_failed
+    assert t.translate("Again", "en", "zh") == "[Chinese] Again"          # stays on the processor
+    launches = [e["args"][e["args"].index("-ngl") + 1] for e in log_lines(log) if "args" in e]
+    assert launches == ["99", "0"]                    # graphics chip first, then the processor, once
+    assert [e["gpu"] for e in log_lines(log) if "gpu" in e] == [False, False]
+    llamacpp.SERVER.gpu_failed = False
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="the Windows job object is checked on Windows by the self-test")
+def test_engine_ends_when_the_app_ends(tmp_path):
+    import subprocess
+    import time
+    code = (
+        "import sys, os; sys.path.insert(0, %r)\n"
+        "from factopia_voice.translate import llamacpp\n"
+        "p = llamacpp._spawn(['sleep', '61.25'], open(%r, 'ab'))\n"
+        "print(p.pid, flush=True); os._exit(0)\n"
+    ) % (str(Path(__file__).resolve().parent.parent), str(tmp_path / "log"))
+    out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, timeout=60)
+    watcher = int(out.stdout.split()[0])
+
+    def alive():
+        listed = subprocess.run(["ps", "-eo", "pid,args"], capture_output=True, text=True).stdout
+        return any("sleep 61.25" in line for line in listed.splitlines()), any(
+            line.strip().startswith(f"{watcher} ") for line in listed.splitlines())
+
+    deadline = time.time() + 15
+    while time.time() < deadline and any(alive()):
+        time.sleep(0.3)
+    assert alive() == (False, False)

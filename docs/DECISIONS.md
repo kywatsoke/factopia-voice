@@ -29,10 +29,13 @@ so a later change can be judged against the reason for the first.
   app shows them on the welcome screen before any download.
 - **Cost:** the mirror is a third party: the pinned checksum guards against a
   changed file, and a different mirror can be pinned if it disappears.
-- **Quality, measured 9 October 2026:** on GitHub's machines the 4B model
-  translated English and Chinese well, but its Burmese had wrong words and
-  stray Greek and Chinese tokens. The 12B model is being compared before the
-  default is final.
+- **Quality, measured 9 October 2026** on GitHub's machines, same sentences:
+  both sizes translate English and Chinese well. Burmese is weak in both: the
+  4B mistranslated key words ("honey", "Venus") and let Greek and Chinese
+  words in; the 12B (7.3 GB, about 4x slower) was better on some lines but
+  still got "honey", "octopus" and "shark" wrong and let an Arabic word in.
+  4B stays the default (the user's choice); Burmese output needs a Burmese
+  speaker to check it before publishing.
 
 ## 2026-10-09 · FriBiDi built from source and shipped with the app
 

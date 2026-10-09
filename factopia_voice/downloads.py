@@ -1,5 +1,6 @@
 """Model downloads: progress, resume after an interrupted connection, and an
 integrity check when the expected SHA-256 is known."""
+import errno
 import hashlib
 import os
 import time
@@ -24,12 +25,30 @@ def fetch(files, folder, on_progress=lambda done, total, name: None):
         base += f.size
 
 
-def fetch_one(url, dest, size=0, sha256=None, on_progress=lambda done, total: None, attempts=6):
-    """Download one file to `dest`, continuing a partial .part file where possible."""
+def _expected_total(response, have):
+    """The full size of the file, from Content-Range (a resumed download) or
+    Content-Length (a fresh one); 0 when the server does not say."""
+    rng = response.headers.get("Content-Range") or ""
+    if "/" in rng and rng.rsplit("/", 1)[1].strip().isdigit():
+        return int(rng.rsplit("/", 1)[1])
+    length = int(response.headers.get("Content-Length") or 0)
+    return have + length if length else 0
+
+
+def fetch_one(url, dest, size=0, sha256=None, on_progress=lambda done, total: None, attempts=8):
+    """Download one file to `dest`, continuing a partial .part file where possible.
+    A connection that ends early counts as an interruption: the next attempt
+    continues from where it stopped. The file is only put in place when it is
+    complete (and matches `sha256`, when given)."""
     dest.parent.mkdir(parents=True, exist_ok=True)
     part = dest.with_name(dest.name + ".part")
+    expected = size
+    complete = False
     for attempt in range(attempts):
         have = part.stat().st_size if part.exists() else 0
+        if expected and have >= expected:
+            complete = True
+            break
         headers = {"User-Agent": USER_AGENT}
         if have:
             headers["Range"] = f"bytes={have}-"
@@ -37,8 +56,7 @@ def fetch_one(url, dest, size=0, sha256=None, on_progress=lambda done, total: No
             with urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=60) as r:
                 if have and r.status != 206:          # the server ignored the range: start again
                     have = 0
-                length = int(r.headers.get("Content-Length") or 0)
-                total = size or (have + length)
+                expected = _expected_total(r, have) or expected
                 with open(part, "ab" if have else "wb") as out:
                     done = have
                     while True:
@@ -47,21 +65,28 @@ def fetch_one(url, dest, size=0, sha256=None, on_progress=lambda done, total: No
                             break
                         out.write(chunk)
                         done += len(chunk)
-                        on_progress(done, total)
-            break
+                        on_progress(done, expected or done)
+            got = part.stat().st_size
+            if not expected or got >= expected:
+                complete = True
+                break
+            # the connection ended early: continue from here on the next attempt
         except urllib.error.HTTPError as e:
-            if e.code == 416 and part.exists():      # already complete
+            if e.code == 416 and part.exists():      # nothing left to send: already complete
+                complete = True
                 break
             if e.code in (401, 403, 404) or attempt == attempts - 1:
                 raise IOError(f"The download failed ({e.code}). Check the connection and try again.")
-        except (urllib.error.URLError, OSError, TimeoutError):
-            if attempt == attempts - 1:
-                raise IOError("The download keeps stopping. Check the connection and try again; it will continue "
-                              "where it left off.")
-        time.sleep(min(30, 2 ** attempt))
+        except (urllib.error.URLError, OSError, TimeoutError) as e:
+            if getattr(e, "errno", None) == errno.ENOSPC:
+                raise IOError(f"There is not enough free space for {dest.name}. Free some space, or move the "
+                              "models to another drive in Settings > Storage, then try again.")
+        if attempt < attempts - 1:
+            time.sleep(min(30, 2 ** attempt))
     got = part.stat().st_size if part.exists() else 0
-    if size and got < size * 0.98:
-        raise IOError(f"The download of {dest.name} is incomplete. Try again; it will continue where it left off.")
+    if not complete or (expected and got < expected):
+        raise IOError(f"The download of {dest.name} keeps stopping. Check the connection and try again; "
+                      "it will continue where it left off.")
     if sha256:
         digest = hashlib.sha256()
         with open(part, "rb") as f:

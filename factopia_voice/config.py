@@ -64,7 +64,12 @@ def _locate():
     if custom:
         return Path(custom), Path(custom) / "output", "custom"
     if FROZEN:
-        return user_data_dir(), documents_dir() / APP_NAME, "installed"
+        data, out = user_data_dir(), documents_dir() / APP_NAME
+        try:
+            out.mkdir(parents=True, exist_ok=True)
+        except OSError:          # Documents not reachable (or access refused on a Mac): keep files with the app
+            out = data / "output"
+        return data, out, "installed"
     return ROOT / "data", ROOT / "data" / "output", "portable"
 
 
@@ -103,9 +108,21 @@ DEFAULT_PROFILE = {
 }
 
 
+def models_problem():
+    """A message when the models folder cannot be reached (a moved folder on a
+    drive that is not connected), else None."""
+    try:
+        MODELS.mkdir(parents=True, exist_ok=True)
+        return None
+    except OSError:
+        return (f"The models folder ({MODELS}) cannot be reached. Connect the drive it is on and start "
+                "Factopia Voice again, or choose another folder in Settings > Storage.")
+
+
 def ensure_dirs():
-    for d in (DATA, MODELS, OUTPUT, CACHE, PROJECTS):
+    for d in (DATA, OUTPUT, CACHE, PROJECTS):
         d.mkdir(parents=True, exist_ok=True)
+    models_problem()          # never stops the app; the voice start-up reports it
 
 
 class JsonStore:

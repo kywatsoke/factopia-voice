@@ -46,6 +46,8 @@ def main():
 
         def do_POST(self):
             body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+            if gpu and os.environ.get("FAKE_LLAMA_FAIL_GPU_TRANSLATE"):
+                return self.reply(500, {"error": "graphics driver failed"})
             if log:
                 with open(log, "a", encoding="utf-8") as f:
                     f.write(json.dumps({"prompt": body["prompt"], "gpu": gpu}) + "\n")

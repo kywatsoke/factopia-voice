@@ -17,6 +17,8 @@ import threading
 import time
 import traceback
 import urllib.request
+
+from .net import open_url
 from pathlib import Path
 
 
@@ -87,6 +89,29 @@ def main(argv):
         return {"command": Path(command[0]).name, "version": next((l for l in said if "version" in l.lower()), said[:1])}
     check("translation engine", translation_engine, required=frozen)
 
+    def engine_lifetime():
+        """The translation engine is tied to the app (Windows job object; on
+        macOS and Linux the shell watcher, which the unit tests check)."""
+        from .translate import llamacpp
+        if sys.platform != "win32":
+            return "shell watcher"
+        import ctypes
+        from ctypes import wintypes
+        log = open(os.devnull, "wb")
+        proc = llamacpp._spawn(["cmd", "/c", "ping -n 30 127.0.0.1 >nul"], log)
+        try:
+            k32 = ctypes.WinDLL("kernel32")
+            k32.IsProcessInJob.argtypes = [wintypes.HANDLE, wintypes.HANDLE, ctypes.POINTER(wintypes.BOOL)]
+            inside = wintypes.BOOL(False)
+            k32.IsProcessInJob(int(proc._handle), llamacpp._JOB, ctypes.byref(inside))
+            if not (llamacpp._JOB and inside.value):
+                raise RuntimeError("the engine is not tied to the app (job object missing)")
+            return "job object"
+        finally:
+            proc.kill()
+            log.close()
+    check("engine ends with the app", engine_lifetime, required=frozen)
+
     def window_toolkit():
         import webview
         detail = {"pywebview": getattr(webview, "__version__", "?")}
@@ -117,9 +142,9 @@ def main(argv):
         threading.Thread(target=server.serve_forever, daemon=True).start()
         try:
             req = urllib.request.Request(f"http://127.0.0.1:{port}/api/state")
-            with urllib.request.urlopen(req, timeout=20) as r:
+            with open_url(req, timeout=20) as r:
                 state = json.loads(r.read())
-            with urllib.request.urlopen(f"http://127.0.0.1:{port}/", timeout=20) as r:
+            with open_url(f"http://127.0.0.1:{port}/", timeout=20) as r:
                 page = r.read()
             if b"Factopia" not in page:
                 raise RuntimeError("the interface did not load")

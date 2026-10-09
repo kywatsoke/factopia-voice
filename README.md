@@ -103,8 +103,9 @@ over the old one; your files and models stay.
 
 **Uninstalling.** Mac: drag the app to the Bin; to free the models' space,
 also delete `~/Library/Application Support/Factopia Voice`. Windows: Settings
-> Apps > Factopia Voice > Uninstall; it asks whether to remove the models too.
-Your own files in Documents are never removed.
+> Apps > Factopia Voice > Uninstall; it asks whether to remove the downloaded
+models too. Your captions projects, settings and the files in Documents are
+kept.
 
 ## When something goes wrong
 

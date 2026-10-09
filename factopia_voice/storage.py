@@ -82,8 +82,10 @@ def remove(item_id):
     return summary()
 
 
-def _copy_tree(src, dest, progress, label, done=0, total=0, skip_existing=True):
-    """Copy every file under src into dest, reporting bytes copied."""
+def _copy_tree(src, dest, progress, label, done=0, total=0, keep_existing=False):
+    """Copy every file under src into dest, reporting bytes copied. A file
+    already there with the same size is skipped; with keep_existing, any file
+    already there is left alone (bringing in old work never replaces newer work)."""
     for root, _, files in os.walk(src):
         for name in files:
             if name.endswith((".part", ".tmp")):
@@ -91,7 +93,7 @@ def _copy_tree(src, dest, progress, label, done=0, total=0, skip_existing=True):
             source = Path(root) / name
             target = Path(dest) / source.relative_to(src)
             size = source.stat().st_size
-            if skip_existing and target.exists() and target.stat().st_size == size:
+            if target.exists() and (keep_existing or target.stat().st_size == size):
                 done += size
                 continue
             target.parent.mkdir(parents=True, exist_ok=True)
@@ -182,10 +184,11 @@ def start_import(folder):
         ids = {c.get("id") for c in clips}
         config.library_store.save((clips + [c for c in read("library.json", []) if c.get("id") not in ids])[:500])
         done = 0
-        for part, dest, label in (("output", OUTPUT, "Copying your files"), ("projects", PROJECTS, "Copying captions projects"),
-                                  ("models", MODELS, "Copying downloaded models")):
+        for part, dest, label, keep in (("output", OUTPUT, "Copying your files", True),
+                                        ("projects", PROJECTS, "Copying captions projects", True),
+                                        ("models", MODELS, "Copying downloaded models", False)):
             if (src / part).is_dir():
-                done = _copy_tree(src / part, dest, progress, label, done, total)
+                done = _copy_tree(src / part, dest, progress, label, done, total, keep_existing=keep)
         progress(100, "Done")
         return {"clips": len(read("library.json", [])), "words": len(read("dictionary.json", [])), "from": str(src)}
 

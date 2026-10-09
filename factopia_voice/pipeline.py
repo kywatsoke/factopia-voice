@@ -7,7 +7,7 @@ import traceback
 import numpy as np
 
 from . import audio, library, text as T
-from .config import CACHE, MODELS, OUTPUT, dictionary_store, ensure_dirs, profile_store
+from .config import CACHE, MODELS, OUTPUT, dictionary_store, ensure_dirs, models_problem, profile_store
 from .downloads import fetch, missing
 from .engines import create_engine
 from .translate import get_translator
@@ -40,6 +40,9 @@ class Studio:
     def _boot(self):
         try:
             ensure_dirs()
+            problem = models_problem()
+            if problem:
+                raise RuntimeError(problem)
             profile = profile_store.load()
             engine = create_engine(profile["engine"])
             if missing(engine.files(), MODELS):
