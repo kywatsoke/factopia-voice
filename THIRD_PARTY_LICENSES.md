@@ -24,6 +24,8 @@ model is added or changed. Checked 7 October 2026; installer parts added
 | llama.cpp (llama-server) | Runs the translation model inside the app (3.0) | MIT | Yes | Yes, with notice |
 | FriBiDi | Text shaping for Burmese on Mac and Windows (3.0) | LGPL-2.1-or-later | Yes | Yes, as a separate replaceable library (it is), with its source available |
 | pywebview | The app window (3.0) | BSD-3-Clause | Yes | Yes, with notice |
+| truststore | Checks downloads against the system's trusted certificates (3.0) | MIT | Yes | Yes, with notice |
+| certifi | Fallback certificate list for downloads (3.0) | MPL-2.0 | Yes | Yes, unchanged, with notice |
 | pythonnet, clr-loader (Windows) | Lets pywebview use WebView2 | MIT | Yes | Yes, with notice |
 | PyObjC (Mac) | Lets pywebview use the Mac's WebKit | MIT | Yes | Yes, with notice |
 | Microsoft Edge WebView2 Runtime (Windows) | Shows the window's contents | Microsoft software licence | Yes | Not bundled: the installer runs Microsoft's own bootstrapper when it is missing |

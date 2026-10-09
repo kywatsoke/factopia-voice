@@ -2,6 +2,21 @@
 
 All notable changes to Factopia Voice. Versions follow MAJOR.MINOR.PATCH.
 
+## 3.0.0-beta.2 - 2026-10-09
+
+Fixes the first start on a Mac, where the voice download stopped every time.
+
+- Downloads (the voice, speech and translation models) and the update check
+  now use the certificates the computer itself trusts (macOS Keychain,
+  Windows certificate store). The Python inside the installed app could not
+  find a certificate list of its own, so every secure download failed and
+  was reported as a broken connection.
+- The start-up error screen has **Try again** and **Open log folder**
+  buttons; there is no need to quit and reopen the app.
+- The log now records why each download attempt failed.
+- Each installer is now checked on GitHub's Mac and Windows machines with a
+  real download, not only with models that were already there.
+
 ## 3.0.0-beta.1 - 2026-10-09
 
 Easy install: a real app for Mac and Windows, for people who are not

@@ -305,6 +305,11 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/captions/delete":
                 projects.delete(str(data.get("id") or ""))
                 return self.reply(200, {"projects": projects.summaries()})
+            if path == "/api/voice/retry":
+                if studio.status.get("phase") == "error":
+                    studio.status = {"phase": "starting", "percent": 0, "detail": "Trying again"}
+                    begin()
+                return self.reply(200, {"ok": True})
             if path == "/api/open":
                 where = {"output": OUTPUT, "data": DATA, "logs": LOGS, "models": MODELS, "projects": PROJECTS,
                          "licences": about.licences_folder()}.get(data.get("what") or "output")

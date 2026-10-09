@@ -227,9 +227,11 @@ async function boot() {
       }
       if (st.phase === "error") {
         $("setupTitle").textContent = "The voice could not start"; $("setupText").textContent = st.detail;
-        bar.hidden = true; $("setupNote").textContent = "Check the internet connection, then close and start Factopia Voice again.";
+        bar.hidden = true; $("setupRetryRow").hidden = false;
+        $("setupNote").textContent = "Check the internet connection and press Try again. The download continues where it stopped.";
         $("dot").className = "dot bad"; return;
       }
+      $("setupRetryRow").hidden = true; bar.hidden = false; $("setupTitle").textContent = "Getting the voice ready";
       $("setupText").textContent = st.detail || "Starting up";
       bar.classList.toggle("wait", st.phase !== "downloading");
       if (st.phase === "downloading") $("setupBar").style.width = st.percent + "%";
@@ -237,4 +239,10 @@ async function boot() {
     await new Promise(r => setTimeout(r, 700));
   }
 }
+$("setupRetry").addEventListener("click", async () => {
+  $("setupRetryRow").hidden = true; $("setupText").textContent = "Trying again";
+  try { await api("/api/voice/retry", {}); } catch {}
+  boot();
+});
+$("setupLogs").addEventListener("click", () => api("/api/open", { what: "logs" }).catch(() => {}));
 boot();

@@ -112,6 +112,29 @@ def main(argv):
             log.close()
     check("engine ends with the app", engine_lifetime, required=frozen)
 
+    def internet_download():
+        """A real HTTPS download the way the app downloads models (first 1 MB of
+        the voice file), so a missing certificate list is caught before release."""
+        import ssl
+        from . import net
+        from .engines.kokoro import KokoroEngine
+        url = next(f.url for f in KokoroEngine().files() if f.name.startswith("voices"))
+        req = urllib.request.Request(url, headers={"User-Agent": "FactopiaVoice", "Range": "bytes=0-1048575"})
+        with net.open_url(req, timeout=60) as r:
+            got = len(r.read())
+        if got < 1000:
+            raise RuntimeError(f"only {got} bytes arrived")
+        detail = {"bytes": got, "certificates": net.TRUST}
+        try:                                  # how plain Python would have fared (for the record only)
+            with urllib.request.urlopen(urllib.request.Request(url, headers={"Range": "bytes=0-1023"}), timeout=30) as r:
+                r.read()
+            detail["python_default"] = "works"
+        except Exception as e:
+            detail["python_default"] = f"{type(getattr(e, 'reason', e)).__name__}: {getattr(e, 'reason', e)}"[:200]
+        detail["default_paths"] = str(ssl.get_default_verify_paths().openssl_cafile)
+        return detail
+    check("internet download", internet_download, required=frozen)
+
     def window_toolkit():
         import webview
         detail = {"pywebview": getattr(webview, "__version__", "?")}

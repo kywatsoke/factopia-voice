@@ -7,6 +7,9 @@ import time
 import urllib.error
 import urllib.request
 
+from . import net
+from .net import open_url
+
 USER_AGENT = "FactopiaVoice"
 
 
@@ -44,6 +47,8 @@ def fetch_one(url, dest, size=0, sha256=None, on_progress=lambda done, total: No
     part = dest.with_name(dest.name + ".part")
     expected = size
     complete = False
+    last_error = ""
+    print(f"Downloading {dest.name} from {url} (certificates: {net.trust()})", flush=True)
     for attempt in range(attempts):
         have = part.stat().st_size if part.exists() else 0
         if expected and have >= expected:
@@ -53,7 +58,7 @@ def fetch_one(url, dest, size=0, sha256=None, on_progress=lambda done, total: No
         if have:
             headers["Range"] = f"bytes={have}-"
         try:
-            with urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=60) as r:
+            with open_url(urllib.request.Request(url, headers=headers), timeout=60) as r:
                 if have and r.status != 206:          # the server ignored the range: start again
                     have = 0
                 expected = _expected_total(r, have) or expected
@@ -75,9 +80,14 @@ def fetch_one(url, dest, size=0, sha256=None, on_progress=lambda done, total: No
             if e.code == 416 and part.exists():      # nothing left to send: already complete
                 complete = True
                 break
+            print(f"Download of {dest.name}, attempt {attempt + 1}: HTTP {e.code} from {e.url}", flush=True)
+            last_error = f"HTTP {e.code}"
             if e.code in (401, 403, 404) or attempt == attempts - 1:
                 raise IOError(f"The download failed ({e.code}). Check the connection and try again.")
         except (urllib.error.URLError, OSError, TimeoutError) as e:
+            reason = getattr(e, "reason", None) or e
+            print(f"Download of {dest.name}, attempt {attempt + 1}: {type(reason).__name__}: {reason}", flush=True)
+            last_error = f"{type(reason).__name__}: {reason}"
             if getattr(e, "errno", None) == errno.ENOSPC:
                 raise IOError(f"There is not enough free space for {dest.name}. Free some space, or move the "
                               "models to another drive in Settings > Storage, then try again.")
@@ -85,7 +95,8 @@ def fetch_one(url, dest, size=0, sha256=None, on_progress=lambda done, total: No
             time.sleep(min(30, 2 ** attempt))
     got = part.stat().st_size if part.exists() else 0
     if not complete or (expected and got < expected):
-        raise IOError(f"The download of {dest.name} keeps stopping. Check the connection and try again; "
+        detail = f" (last error: {last_error})" if last_error else ""
+        raise IOError(f"The download of {dest.name} keeps stopping{detail}. Check the connection and try again; "
                       "it will continue where it left off.")
     if sha256:
         digest = hashlib.sha256()
