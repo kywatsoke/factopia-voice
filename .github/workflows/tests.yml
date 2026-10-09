@@ -1,8 +1,4 @@
-# Runs the automated tests.
-#   Push to main:                  Linux and Windows
-#   Pull request, manual run, tag: Linux, Windows and macOS
-# macOS minutes count ten times against the free monthly allowance for
-# private repositories, so it runs only where it matters.
+# Runs the automated tests on Linux, Windows and macOS.
 name: Tests
 
 on:
@@ -31,7 +27,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ${{ fromJSON(github.event_name == 'push' && github.ref_type == 'branch' && '["ubuntu-latest", "windows-latest"]' || '["ubuntu-latest", "windows-latest", "macos-latest"]') }}
+        os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
       - uses: actions/checkout@v7
 

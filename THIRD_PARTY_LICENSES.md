@@ -29,11 +29,11 @@ model is added or changed. Checked 7 October 2026.
 
 - **Using the app yourself, and publishing the audio it makes, is unaffected.**
   These licences cover the software, not the voiceovers.
-- **Selling a closed-source app is blocked by two components today:** phonemizer
-  and espeak-ng are GPL. The bundled ffmpeg is also a GPL build and needs the
-  same attention. Before a public release, either replace the
-  text-to-phoneme step with a permissively licensed one, or release the app's
-  own source under the GPL.
+- **Factopia Voice itself is free software under GPL-3.0-or-later** (decided
+  9 October 2026), with its source public on GitHub. That fits the GPL parts
+  it uses (phonemizer, espeak-ng, the GPL build of ffmpeg): anyone who gets
+  the app can also get all of its source. A paid closed-source version is not
+  planned; it would need those parts replaced.
 - Licences shown are those declared by each package on 7 October 2026. This
   register is a working record, not legal advice.
 

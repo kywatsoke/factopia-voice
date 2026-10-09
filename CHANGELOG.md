@@ -6,10 +6,10 @@ All notable changes to Factopia Voice. Versions follow MAJOR.MINOR.PATCH.
 
 Repository set up on GitHub, with documentation and automatic testing.
 
-- The code now lives in a private GitHub repository. Each version is published
-  on its Releases page as a ready-to-run zip.
-- Tests run automatically on Linux and Windows for every change, and on macOS
-  for each release.
+- Factopia Voice is now open source under GPL-3.0-or-later, in a public GitHub
+  repository. Each version is published on its Releases page as a
+  ready-to-run zip.
+- Tests run automatically on Linux, Windows and macOS for every change.
 - New README with installing, updating and troubleshooting; new guides for
   development, testing, decisions and the roadmap in the docs folder.
 - Subtitle files are named with their language (for example `_zh.srt`), so a
@@ -22,8 +22,8 @@ Repository set up on GitHub, with documentation and automatic testing.
   the problem and point to the SRT export instead.
 - Speech recognition passes text as UTF-8, so error messages with non-English
   text cannot break it on Windows.
-- The licence register is now `THIRD_PARTY_LICENSES.md`; the app itself is
-  marked private, all rights reserved (`LICENSE`).
+- The licence register is now `THIRD_PARTY_LICENSES.md`; the app's own licence
+  is in `LICENSE`.
 - Automated tests: 63 (was 61).
 
 ## 2.2.0 - 2026-10-09
