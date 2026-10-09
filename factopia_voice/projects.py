@@ -195,8 +195,9 @@ def start_transcribe(project_id, script=None, length=None):
         proc = subprocess.Popen(
             [sys.executable, "-m", "factopia_voice.listeners.worker", listener.id, str(MODELS),
              str(folder / "audio.wav"), str(out)],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, cwd=str(Path(__file__).resolve().parent.parent),
-            creationflags=media.NO_WINDOW)
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8", errors="replace",
+            env={**os.environ, "PYTHONIOENCODING": "utf-8"},
+            cwd=str(Path(__file__).resolve().parent.parent), creationflags=media.NO_WINDOW)
         for line in proc.stdout:
             if line.startswith("P "):
                 progress(int(line[2:]), "Listening to the recording")
@@ -212,7 +213,6 @@ def start_transcribe(project_id, script=None, length=None):
             fresh["script"] = script
         exact = T.normalize(fresh["script"]).replace("\n", " ") if fresh["script"].strip() else ""
         if exact:
-            import re
             exact = re.sub(r"\[\s*pause[^\]]*\]", " ", exact, flags=re.I)
             words = captions.align(exact, words)
         fresh["words"] = words
@@ -295,7 +295,7 @@ def export_srt(project_id):
     project = load(project_id)
     if not project["lines"]:
         raise ValueError("There are no captions to export yet.")
-    name = f"{T.slug(Path(project['name']).stem)}_{time.strftime('%Y%m%d-%H%M%S')}.srt"
+    name = f"{T.slug(Path(project['name']).stem, 'captions')}_{project.get('language', 'en')}_{time.strftime('%Y%m%d-%H%M%S')}.srt"
     (OUTPUT / name).write_text(captions.srt(project["lines"]), encoding="utf-8")
     return {"file": name}
 
@@ -308,7 +308,7 @@ def start_export_video(project_id):
         raise ValueError("There are no captions to export yet.")
 
     def work(progress):
-        name = f"{T.slug(Path(project['name']).stem)}_captioned_{time.strftime('%Y%m%d-%H%M%S')}.mp4"
+        name = f"{T.slug(Path(project['name']).stem, 'video')}_captioned_{time.strftime('%Y%m%d-%H%M%S')}.mp4"
         started = time.time()
         progress(0, "Drawing captions into the video")
         frames = render.burn(source_path(project), OUTPUT / name, project["lines"], project["style"], project,

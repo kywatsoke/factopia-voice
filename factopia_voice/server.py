@@ -196,6 +196,7 @@ class Handler(BaseHTTPRequestHandler):
             if not isinstance(data, dict):
                 raise ValueError
         except ValueError:
+            self.close_connection = True          # the body may be unread
             return self.reply(400, {"error": "Bad request."})
         path = urlparse(self.path).path
         try:

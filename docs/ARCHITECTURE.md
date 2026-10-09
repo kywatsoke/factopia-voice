@@ -37,8 +37,8 @@ and Windows; nothing is written per platform except the two small launchers.
   is returned afterwards and its runtime cannot clash with the voice engine's.
 - `render.py` draws captions with Pillow and blends them onto raw frames piped
   through ffmpeg. The preview and the export share that code.
-- The on-screen caption reader (2.2) and translation (2.3) will write to the
-  same caption track, so the editor, styling and export need no changes.
+- Translation (2.2) writes to the same caption track, and so would a future
+  on-screen caption reader, so the editor, styling and export need no changes.
 
 ## Translation (2.2)
 
@@ -52,6 +52,26 @@ and Windows; nothing is written per platform except the two small launchers.
   context, then spreads the result back over the sentence's time.
 - A translated track is a new project that links (not copies) the video.
 
+## Where the code is
+
+| Path | Job |
+| --- | --- |
+| `factopia_voice/__main__.py` | Starts the server and opens the window |
+| `config.py` | Paths, settings, small JSON stores |
+| `server.py` | Local HTTP API and static files; Host and Origin checks |
+| `pipeline.py` | Script to voiceover: the Studio's one path |
+| `text.py`, `audio.py`, `library.py`, `downloads.py` | Script rules, audio assembly, clip history, model downloads |
+| `engines/` | Speech engines (Kokoro) |
+| `listeners/` | Speech-to-text models (Parakeet), run in `worker.py` |
+| `media.py` | ffmpeg: probe, extract audio, frames |
+| `captions.py` | Word timing, alignment to a script, line grouping, SRT |
+| `projects.py` | Caption projects on disk and their background jobs |
+| `render.py`, `fonts.py` | Drawing captions; finding fonts that have the right letters |
+| `languages.py` | English, Chinese, Burmese rules |
+| `translate/` | Translators (TranslateGemma through Ollama) |
+| `web/` | The interface: HTML, CSS, plain JavaScript |
+| `tests/` | Automated tests with a fake engine and a fake Ollama |
+
 ## Why this shape
 
 - **Cross-platform by default.** The interface is HTML, so there is no separate
@@ -61,8 +81,10 @@ and Windows; nothing is written per platform except the two small launchers.
   (`files`, `load`, `voices`, `synthesize`). Kokoro is one file. A better model
   later is one new file plus one line in `engines/__init__.py`. Nothing else
   changes, and old clips keep a record of which engine made them.
-- **Translation has a reserved slot.** The pipeline already calls
-  `translate/` before speech. Registering a translator switches it on.
+- **Translators are plug-ins too.** `translate/base.py` defines the contract
+  (`status`, `setup`, `translate`, `translate_many`); TranslateGemma through
+  Ollama is one file. The pipeline calls it before speech when a script is in
+  another language.
 - **Data is separate from code.** Everything learned or created is in `data/`.
   Updating the program is replacing the code folder.
 
@@ -85,11 +107,17 @@ Japanese, Portuguese and Mandarin. A language outside that list needs a second
 engine file. Check the model licence first: some multilingual models are
 non-commercial and cannot be used on a monetized channel.
 
-**Translation.** Add `translate/<name>.py` implementing `Translator`, register
-it in `translate/__init__.py`, and add a language picker that sends
-`target_language` to `/api/generate`. Offline candidates: Argos Translate
-(MIT/CC0, about 30 languages) or NLLB-200 through CTranslate2 (200 languages,
-non-commercial licence).
+**Another translation engine.** Add `translate/<name>.py` implementing
+`Translator`, register it in `translate/__init__.py`. Check its licence and its
+Burmese quality first; NLLB-200, for example, is non-commercial.
+
+**Another caption language.** Add an entry to `languages.py` (line length,
+how words join, where lines may break), a font list in `fonts.py`, and a
+speech-to-text model for it in `listeners/`.
+
+**The on-screen caption reader.** A new input that reads burned-in captions
+with OCR and writes a caption track; everything after that is already built.
+Postponed on 9 October 2026 because it is the heaviest component.
 
 **Phone access.** Bind the server to the local network behind a PIN and show
 the address as a QR code. Kept out of 2.0 on purpose: it widens exposure.
@@ -99,9 +127,13 @@ the address as a QR code. Kept out of 2.0 on purpose: it widens exposure.
 
 ## Resources (measured)
 
-Kokoro 82M on a 2-core cloud CPU, no GPU: 24 seconds of audio in about 10
-seconds, about 1.1 GB of memory while running, 354 MB of model files on disk.
-A recent laptop should be faster.
+| Part | Measured on | Speed | Memory | Disk |
+| --- | --- | --- | --- | --- |
+| Kokoro 82M voice | 2-core cloud CPU, no GPU | 24 s of audio in about 10 s | about 1.1 GB | 354 MB |
+| Parakeet speech to text | 2-core cloud CPU | 8.1x real time; 1.6% word errors on the test clips | about 1.1 GB, freed when the worker exits | 460 MB |
+| TranslateGemma 4B / 12B | not yet measured on the Mac | | Ollama's own process | 3.3 GB / 8.1 GB |
+
+A recent laptop is faster than the cloud CPU.
 
 ## Security
 

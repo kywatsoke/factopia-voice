@@ -1,2 +1,2 @@
-"""Factopia Voice: a local, offline voiceover studio."""
-__version__ = "2.2.0"
+"""Factopia Voice: an offline voiceover, captions and translation studio."""
+__version__ = "2.2.1"

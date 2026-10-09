@@ -2,6 +2,26 @@
 
 All notable changes to Factopia Voice. Versions follow MAJOR.MINOR.PATCH.
 
+## 2.2.1 - 2026-10-09
+
+Repository set up on GitHub, with documentation and automatic testing.
+
+- The code now lives in a private GitHub repository. Each version is published
+  on its Releases page as a ready-to-run zip.
+- Tests run automatically on Linux and Windows for every change, and on macOS
+  for each release.
+- New README with installing, updating and troubleshooting; new guides for
+  development, testing, decisions and the roadmap in the docs folder.
+- Subtitle files are named with their language (for example `_zh.srt`), so a
+  Chinese and an English export of one video no longer look alike.
+- Exports from a project whose name has no English letters (a Chinese or
+  Burmese file name) are called `captions_…` or `video_…` instead of
+  `voiceover_…`.
+- Speech recognition passes text as UTF-8, so error messages with non-English
+  text cannot break it on Windows.
+- The licence register is now `THIRD_PARTY_LICENSES.md`; the app itself is
+  marked private, all rights reserved (`LICENSE`).
+
 ## 2.2.0 - 2026-10-09
 
 Translation between English, Chinese and Burmese, in every direction.
@@ -48,7 +68,8 @@ Captions: the reverse of the voiceover.
 
 - Added an automated test suite (31 tests) covering script handling, audio
   assembly, the generation pipeline and the local server's safety checks.
-- Added this changelog and a third-party licence register (LICENSES.md).
+- Added this changelog and a third-party licence register (LICENSES.md, now
+  THIRD_PARTY_LICENSES.md).
 
 ## 2.0.0 - 2026-10-06
 

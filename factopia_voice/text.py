@@ -56,6 +56,8 @@ def title_of(text, words=7):
     return " ".join(parts[:words]) + ("..." if len(parts) > words else "")
 
 
-def slug(text):
+def slug(text, fallback="voiceover"):
+    """A safe file name from the first words. Text with no Latin letters or
+    digits (Chinese, Burmese) gets the fallback name."""
     s = re.sub(r"[^a-z0-9]+", "-", " ".join(_PAUSE.sub(" ", text).lower().split()[:6])).strip("-")
-    return s[:48] or "voiceover"
+    return s[:48] or fallback

@@ -48,3 +48,8 @@ def test_slug_and_title():
     assert T.slug("Hello, World! [pause]") == "hello-world"
     assert T.slug("!!!") == "voiceover"
     assert T.title_of("a b c d e f g h i") == "a b c d e f g..."
+
+
+def test_slug_fallback_for_non_latin_names():
+    assert T.slug("蜂蜜永远不会变质") == "voiceover"
+    assert T.slug("ပျားရည်", "captions") == "captions"

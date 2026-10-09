@@ -139,8 +139,8 @@ def test_projects_from_2_1_open_as_english(clean_data):
     from factopia_voice import projects
     p = projects.import_srt("1\n00:00:00,000 --> 00:00:01,000\nHi\n", "old.srt")
     path = projects._folder(p["id"]) / "project.json"
-    data = json.loads(path.read_text())
+    data = json.loads(path.read_text(encoding="utf-8"))
     del data["language"]
-    path.write_text(json.dumps(data))
+    path.write_text(json.dumps(data), encoding="utf-8")
     assert projects.load(p["id"])["language"] == "en"
     assert projects.update(p["id"], lines=[{"start": 0, "end": 1, "text": "Hi there"}])["language"] == "en"
