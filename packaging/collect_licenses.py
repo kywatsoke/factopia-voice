@@ -64,7 +64,7 @@ exact versions in this build, is available here.
 
 | Part | Version | Licence | Source |
 | --- | --- | --- | --- |
-| Factopia Voice | see the app's About screen | see Factopia Voice LICENSE.txt | https://github.com/kywatsoke/factopia |
+| Factopia Voice | see the app's About screen | see Factopia Voice LICENSE.txt | https://github.com/kywatsoke/factopia-voice |
 | phonemizer | {version('phonemizer')} | GPL-3.0-or-later | https://pypi.org/project/phonemizer/{version('phonemizer')}/#files |
 | eSpeak NG (inside espeakng-loader) | espeakng-loader {version('espeakng-loader')} | GPL-3.0-or-later | https://github.com/thewh1teagle/espeakng-loader and https://github.com/espeak-ng/espeak-ng |
 | FFmpeg (inside imageio-ffmpeg) | imageio-ffmpeg {version('imageio-ffmpeg')} | GPL (this build) | https://github.com/imageio/imageio-ffmpeg (build notes) and https://ffmpeg.org/download.html#get-sources |

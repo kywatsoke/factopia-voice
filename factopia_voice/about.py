@@ -6,7 +6,7 @@ from pathlib import Path
 from .config import FROZEN, ROOT
 from .translate.llamacpp import NOTICE, POLICY_URL, TERMS_URL
 
-SOURCE_URL = "https://github.com/kywatsoke/factopia"
+SOURCE_URL = "https://github.com/kywatsoke/factopia-voice"
 
 MODELS = [
     {"name": "Kokoro-82M", "role": "Voice", "licence": "Apache 2.0",

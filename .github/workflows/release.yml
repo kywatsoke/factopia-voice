@@ -1,10 +1,13 @@
 # Publishes a release of the version in factopia_voice/__init__.py:
-# runs the tests on all three platforms, builds the zip, and attaches it to a
-# GitHub release whose notes are that version's section of CHANGELOG.md.
+# runs the tests on all three platforms, builds and checks the installers
+# (Installers workflow), and attaches Factopia-Voice-Mac.dmg and
+# Factopia-Voice-Windows-Setup.exe to a GitHub release whose notes are that
+# version's section of CHANGELOG.md. A version with a hyphen (3.0.0-beta.1)
+# is published as a pre-release. GitHub adds the source code archives itself.
 #
 # Two ways to start it:
 #   - Actions tab > Release > Run workflow (creates the tag v<version>)
-#   - pushing a tag such as v2.2.1 from a computer with git
+#   - pushing a tag such as v3.0.0 from a computer with git
 name: Release
 
 on:
@@ -20,20 +23,17 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  tests:
-    uses: ./.github/workflows/tests.yml
-
-  release:
-    needs: tests
+  check:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     env:
       GH_TOKEN: ${{ github.token }}
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
     steps:
       - uses: actions/checkout@v7
 
-      - name: Read the version
+      - name: Read the version and check it is new
         id: version
         run: |
           version=$(sed -n 's/^__version__ = "\(.*\)"/\1/p' factopia_voice/__init__.py)
@@ -46,27 +46,60 @@ jobs:
             echo "::error::Release $tag already exists. Raise __version__ and add a CHANGELOG.md section first."
             exit 1
           fi
+          if ! grep -q "^## $version " CHANGELOG.md; then
+            echo "::error::CHANGELOG.md has no section headed '## $version - <date>'"
+            exit 1
+          fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
 
-      - name: Build the zip
-        run: scripts/package.sh
+  tests:
+    needs: check
+    uses: ./.github/workflows/tests.yml
 
-      - name: Take the release notes from CHANGELOG.md
-        env:
-          VERSION: ${{ steps.version.outputs.version }}
+  installers:
+    needs: check
+    uses: ./.github/workflows/installers.yml
+
+  release:
+    needs: [check, tests, installers]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VERSION: ${{ needs.check.outputs.version }}
+      TAG: ${{ needs.check.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: installer-*
+          path: dist
+          merge-multiple: true
+
+      - name: Release notes
         run: |
-          awk -v head="## $VERSION " 'index($0, head) == 1 {on = 1; next} /^## / {on = 0} on' CHANGELOG.md > notes.md
-          if [ ! -s notes.md ]; then
-            echo "::error::CHANGELOG.md has no section headed '## $VERSION - <date>'"
-            exit 1
-          fi
+          {
+            echo "## Download"
+            echo
+            echo "- **Mac** (Apple silicon, M1 or later): **Factopia-Voice-Mac.dmg**"
+            echo "- **Windows 10 or 11** (64-bit): **Factopia-Voice-Windows-Setup.exe**"
+            echo
+            echo "First time on a Mac: open the app, click Done, then System Settings > Privacy & Security > Open Anyway."
+            echo "First time on Windows: if a blue box appears, click More info, then Run anyway."
+            echo
+            echo "## What changed"
+            echo
+            awk -v head="## $VERSION " 'index($0, head) == 1 {on = 1; next} /^## / {on = 0} on' CHANGELOG.md
+          } > notes.md
           cat notes.md
+          ls -l dist
 
       - name: Publish the release
-        env:
-          VERSION: ${{ steps.version.outputs.version }}
-          TAG: ${{ steps.version.outputs.tag }}
-        run: >
-          gh release create "$TAG" "dist/FactopiaVoice-$VERSION.zip"
-          --target "$GITHUB_SHA" --title "Factopia Voice $VERSION" --notes-file notes.md
+        run: |
+          flags=""
+          case "$VERSION" in *-*) flags="--prerelease" ;; esac
+          gh release create "$TAG" dist/Factopia-Voice-Mac.dmg dist/Factopia-Voice-Windows-Setup.exe \
+            --target "$GITHUB_SHA" --title "Factopia Voice $VERSION" --notes-file notes.md $flags

@@ -9,7 +9,7 @@ import urllib.request
 from . import __version__
 from .config import CACHE
 
-REPO = os.environ.get("FACTOPIA_VOICE_RELEASES", "kywatsoke/factopia")
+REPO = os.environ.get("FACTOPIA_VOICE_RELEASES", "kywatsoke/factopia-voice")
 API = os.environ.get("FACTOPIA_VOICE_RELEASES_API", f"https://api.github.com/repos/{REPO}/releases?per_page=20")
 CACHE_FILE = CACHE / "update.json"
 DAY = 24 * 3600
