@@ -8,6 +8,7 @@ import urllib.request
 
 from . import __version__
 from .config import CACHE
+from .net import open_url
 
 REPO = os.environ.get("FACTOPIA_VOICE_RELEASES", "kywatsoke/factopia-voice")
 API = os.environ.get("FACTOPIA_VOICE_RELEASES_API", f"https://api.github.com/repos/{REPO}/releases?per_page=20")
@@ -36,7 +37,7 @@ def check(force=False):
     want_betas = current[3] == 0
     try:
         req = urllib.request.Request(API, headers={"Accept": "application/vnd.github+json", "User-Agent": "FactopiaVoice"})
-        with urllib.request.urlopen(req, timeout=8) as r:
+        with open_url(req, timeout=8) as r:
             releases = json.loads(r.read())
     except Exception:
         return {"current": __version__, "error": "Could not check for updates.", "newer": False}

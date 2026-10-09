@@ -228,3 +228,6 @@ input[type=checkbox]{width:17px;height:17px;padding:0;accent-color:var(--acc);ve
 .welcome-card .hint{text-align:left}
 @media (max-width:600px){.models>div{grid-template-columns:1fr;gap:2px}}
 .settings .rows.compact{padding:0}
+
+/* start-up error: Try again and Open log folder, centred under the message */
+.setup-card .row.center { justify-content: center; margin-top: 16px; gap: 10px; }
