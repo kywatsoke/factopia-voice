@@ -19,7 +19,7 @@ factopia/                     (github.com/kywatsoke/factopia)
 ├── requirements-dev.txt      what the tests need on top
 ├── CHANGELOG.md
 ├── THIRD_PARTY_LICENSES.md
-├── LICENSE
+├── LICENSE                   GPL-3.0
 └── README.md
 ```
 
@@ -85,13 +85,9 @@ releases.
 
 | Event | Linux | Windows | macOS |
 | --- | --- | --- | --- |
-| Push to `main` | yes | yes | no |
-| Pull request, version tag, manual run ("Run workflow" on the Actions tab) | yes | yes | yes |
+| Push to `main`, pull request, version tag, manual run | yes | yes | yes |
 
-macOS minutes count ten times against the 2,000 free minutes a month for
-private repositories, so the Mac runs only when it matters. A version tag
-runs all three before the release is built. Usage is on GitHub under
-Settings > Billing and plans.
+The repository is public, so GitHub's standard build machines are free.
 
 ## Making a release
 

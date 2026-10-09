@@ -4,17 +4,21 @@ Each entry records what was chosen, why, and what it costs. Newest first.
 Add an entry whenever an engine, a licence or the shape of the app changes,
 so a later change can be judged against the reason for the first.
 
-## 2026-10-09 · GitHub: private repository, tests on every push
+## 2026-10-09 · Open source (GPL-3.0-or-later) in a public repository
 
-- **Chosen:** the private repository `kywatsoke/factopia`. Tests run on Linux and
-  Windows for every push; macOS is added for pull requests, version tags and
-  manual runs. The Release workflow, started from the Actions tab, builds
-  the zip and tags the version.
-- **Why:** GitHub Free gives 2,000 Actions minutes a month for private
-  repositories, and a macOS minute counts as ten. Windows is the platform
-  nobody has tried by hand yet, so it runs every time.
-- **Cost:** a macOS-only break can reach `main` before a tag catches it. The
-  manual Mac check before each release covers that.
+- **Chosen:** the app's own code is licensed GPL-3.0-or-later and the
+  repository `kywatsoke/factopia` is public. Commit history uses GitHub's
+  no-reply address instead of a personal email. Tests run on Linux, Windows
+  and macOS for every push. The Release workflow, started from the Actions
+  tab, builds the downloads and tags the version.
+- **Why:** the app is shared free with friends, and two parts of the voice
+  engine (phonemizer, espeak-ng) are GPL, so anyone who receives the app is
+  entitled to its source. Publishing it settles that, lets friends download
+  without a GitHub account, and makes GitHub's build machines free.
+  Alternatives were a private repository with a separate public download
+  repository, or sharing installers privately; both still owe the source.
+- **Cost:** anyone can read and reuse the code under the GPL. A paid
+  closed-source version would need the GPL parts replaced.
 
 ## 2026-10-09 · On-screen caption reader postponed
 

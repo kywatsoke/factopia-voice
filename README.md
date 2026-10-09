@@ -135,8 +135,7 @@ uv run --python 3.12 --no-project --with-requirements requirements.txt \
    --with-requirements requirements-dev.txt pytest -q
 ```
 
-Every push to GitHub runs the tests on Linux and Windows; pull requests,
-version tags and manual runs add macOS. **Actions > Release > Run workflow**
+Every push to GitHub runs the tests on Linux, Windows and macOS. **Actions > Release > Run workflow**
 builds the release zip and publishes it on the Releases page.
 
 | Document | Read it for |
@@ -151,8 +150,14 @@ builds the release zip and publishes it on the Releases page.
 
 ## Licence
 
-Private project, all rights reserved; see [LICENSE](LICENSE).
+Copyright (C) 2026 Kywat Soke.
+
+Factopia Voice is free software: you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the Free
+Software Foundation, either version 3 of the License, or (at your option) any
+later version. It is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; see [LICENSE](LICENSE) for details.
+
 The models and libraries it uses keep their own licences, listed in
 [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md). Voiceovers, captions and
-translations you make are yours to publish. Selling the app itself would need
-the GPL components named there replaced first.
+translations you make are yours to publish.
