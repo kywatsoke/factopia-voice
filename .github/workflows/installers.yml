@@ -1,0 +1,150 @@
+# Builds the installers: Factopia-Voice-Mac.dmg (Apple silicon) and
+# Factopia-Voice-Windows-Setup.exe (Windows 10 and later), then checks them:
+# the packed app runs its self-test (text shaping, engines, window, helper
+# process, local server, a spoken sentence heard back by speech recognition),
+# and the installer itself is installed and the installed copy tested again.
+# The files are kept as the run's artifacts; the Release workflow attaches them.
+name: Installers
+
+on:
+  workflow_dispatch:
+  workflow_call:
+  push:
+    branches: ["v3-*"]
+    paths:
+      - "factopia_voice/**"
+      - "packaging/**"
+      - "requirements.txt"
+      - ".github/workflows/installers.yml"
+  pull_request:
+    paths:
+      - "factopia_voice/**"
+      - "packaging/**"
+      - "requirements.txt"
+      - ".github/workflows/installers.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: installers-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    name: ${{ matrix.label }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            label: Mac
+            python: .venv-build/bin/python
+            app: dist/Factopia Voice.app/Contents/MacOS/Factopia Voice
+            installer: dist/Factopia-Voice-Mac.dmg
+          - os: windows-latest
+            label: Windows
+            python: .venv-build/Scripts/python.exe
+            app: dist/Factopia Voice/Factopia Voice.exe
+            installer: dist/Factopia-Voice-Windows-Setup.exe
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      PY: ${{ matrix.python }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v10.2.0
+
+      - name: Set up the build Python
+        run: |
+          uv venv --python 3.12 .venv-build
+          uv pip install --python "$PY" -r requirements.txt -r packaging/requirements-build.txt
+
+      - name: Compiler for FriBiDi (Windows)
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Bundled parts (icons, llama.cpp, FriBiDi, licences)
+        run: |
+          "$PY" packaging/make_icons.py
+          "$PY" packaging/fetch_llama.py
+          "$PY" packaging/build_fribidi.py
+          "$PY" packaging/collect_licenses.py
+
+      - name: Pack the app (PyInstaller)
+        run: |
+          "$PY" -m PyInstaller packaging/factopia_voice.spec --noconfirm --distpath dist --workpath build/pyinstaller
+
+      - name: Make the installer
+        run: |
+          "$PY" packaging/finish_app.py
+          ls -l dist
+
+      - name: Models for the self-test (cached)
+        id: models
+        uses: actions/cache@v6
+        with:
+          path: ~/fv-test-models
+          key: fv-test-models-kokoro-v1.0-parakeet-v2-int8
+
+      - name: Download the models for the self-test
+        if: steps.models.outputs.cache-hit != 'true'
+        run: uv run --python 3.12 --no-project --with-requirements requirements.txt python packaging/fetch_test_models.py ~/fv-test-models
+
+      - name: Self-test the packed app
+        run: |
+          models=$(cd ~/fv-test-models && { pwd -W 2>/dev/null || pwd; })
+          FV_SELFTEST_VOICE="$models" FV_SELFTEST_SPEECH="$models" "${{ matrix.app }}" --self-test selftest-app.json || true
+          "$PY" packaging/report_selftest.py selftest-app.json "${{ matrix.label }} app"
+
+      - name: Install from the installer and test the installed copy (Mac)
+        if: runner.os == 'macOS'
+        run: |
+          mount=$(hdiutil attach -nobrowse -readonly "${{ matrix.installer }}" | awk -F'\t' '/\/Volumes\//{print $NF}')
+          echo "Mounted at $mount"; ls -la "$mount"
+          rm -rf "$HOME/Applications/Factopia Voice.app"; mkdir -p "$HOME/Applications"
+          ditto "$mount/Factopia Voice.app" "$HOME/Applications/Factopia Voice.app"
+          hdiutil detach "$mount"
+          codesign --verify --deep --strict "$HOME/Applications/Factopia Voice.app"
+          "$HOME/Applications/Factopia Voice.app/Contents/MacOS/Factopia Voice" --self-test selftest-installed.json || true
+          "$PY" packaging/report_selftest.py selftest-installed.json "Mac installed"
+
+      - name: Install from the installer and test the installed copy (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          "${{ matrix.installer }}" //VERYSILENT //SUPPRESSMSGBOXES //NORESTART //CURRENTUSER "//LOG=install.log"
+          installed="$LOCALAPPDATA/Programs/Factopia Voice/Factopia Voice.exe"
+          ls -l "$installed"
+          "$installed" --self-test selftest-installed.json || true
+          "$PY" packaging/report_selftest.py selftest-installed.json "Windows installed"
+          "$LOCALAPPDATA/Programs/Factopia Voice/unins000.exe" //VERYSILENT //SUPPRESSMSGBOXES //NORESTART
+          sleep 5
+          if [ -e "$installed" ]; then echo "::warning::The uninstaller left the app in place"; else echo "Uninstall removed the app."; fi
+
+      - name: Sizes
+        run: |
+          size=$(du -k "${{ matrix.installer }}" | cut -f1)
+          echo "::notice title=${{ matrix.label }} installer::$(basename "${{ matrix.installer }}"): $((size / 1024)) MB"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: installer-${{ matrix.label }}
+          path: ${{ matrix.installer }}
+          if-no-files-found: error
+          retention-days: 30
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: logs-${{ matrix.label }}
+          path: |
+            selftest-*.json
+            install.log
+          if-no-files-found: ignore
+          retention-days: 14
