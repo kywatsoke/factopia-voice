@@ -1,0 +1,101 @@
+# Runs the real TranslateGemma model with the built-in engine on a fixed set of
+# English, Chinese and Burmese sentences, and saves the result to the
+# ci-reports branch (translation-sample-<quality>.md) for a person to judge.
+# Started by hand: Actions > Translation sample > Run workflow.
+name: Translation sample
+
+on:
+  workflow_dispatch:
+    inputs:
+      quality:
+        description: Model size
+        type: choice
+        options: [standard, high]
+        default: standard
+
+permissions:
+  contents: write
+
+concurrency:
+  group: translation-sample
+  cancel-in-progress: false
+
+jobs:
+  sample:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: bash
+    env:
+      LLAMA_TAG: b11515
+      QUALITY: ${{ inputs.quality }}
+      FACTOPIA_VOICE_DATA: ${{ github.workspace }}/../fv-data
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v10.2.0
+
+      - name: Find the model file on Hugging Face (no login)
+        id: model
+        run: |
+          read -r REPO FILE < <(uv run --python 3.12 --no-project --with-requirements requirements.txt python -c "
+          from factopia_voice.translate import llamacpp
+          s = llamacpp.MODELS_AVAILABLE['$QUALITY']; print(s.repo, s.file)")
+          echo "repo=$REPO" >> "$GITHUB_OUTPUT"
+          echo "file=$FILE" >> "$GITHUB_OUTPUT"
+          {
+            echo "## Hugging Face"
+            curl -sSf "https://huggingface.co/api/models/$REPO" | python3 -c "import sys, json; d = json.load(sys.stdin); print(f\"- $REPO: revision {d.get('sha')}, gated: {d.get('gated')}\")"
+            curl -sSf "https://huggingface.co/api/models/$REPO/tree/main" | python3 -c "
+          import sys, json
+          for f in json.load(sys.stdin):
+              if f['path'].endswith('.gguf'):
+                  print(f\"  - {f['path']}: {f.get('size')} bytes, sha256 {(f.get('lfs') or {}).get('oid')}\")"
+            echo
+            echo "## llama.cpp $LLAMA_TAG release files"
+            gh api "repos/ggml-org/llama.cpp/releases/tags/$LLAMA_TAG" -q '.assets[] | "- \(.name) (\(.size) bytes)"'
+          } | tee info.md
+
+      - name: Get llama-server (Linux, processor)
+        run: |
+          mkdir -p ../llama && cd ../llama
+          gh release download "$LLAMA_TAG" -R ggml-org/llama.cpp -p "*bin-ubuntu-x64.zip"
+          unzip -q ./*.zip
+          server=$(find "$PWD" -name llama-server -type f | head -n 1)
+          chmod +x "$server"
+          echo "FACTOPIA_VOICE_LLAMA_SERVER=$server" >> "$GITHUB_ENV"
+          "$server" --version || true
+
+      - name: Download the model the way the app does (no login)
+        run: |
+          dest="$FACTOPIA_VOICE_DATA/models/translation"
+          mkdir -p "$dest"
+          curl -L --fail --retry 5 -o "$dest/${{ steps.model.outputs.file }}" \
+            "https://huggingface.co/${{ steps.model.outputs.repo }}/resolve/main/${{ steps.model.outputs.file }}"
+          ls -l "$dest"
+
+      - name: Translate the sample
+        run: |
+          uv run --python 3.12 --no-project --with-requirements requirements.txt \
+            python scripts/translation_sample.py --quality "$QUALITY" --out report.md
+          cat info.md >> report.md
+          cat report.md
+
+      - name: Save the report to the ci-reports branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git fetch -q origin ci-reports; then
+            git worktree add -q ../reports FETCH_HEAD
+            git -C ../reports switch -q -c ci-reports
+          else
+            git worktree add -q --orphan -b ci-reports ../reports
+          fi
+          cp report.md "../reports/translation-sample-$QUALITY.md"
+          cd ../reports
+          git add -A
+          git commit -q -m "Translation sample ($QUALITY), run ${{ github.run_id }}"
+          git push -q origin HEAD:ci-reports
+          echo "::notice title=Translation sample::Saved to the ci-reports branch as translation-sample-$QUALITY.md"
