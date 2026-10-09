@@ -2,7 +2,8 @@
 
 The live plan, with the backlog and its status, is the
 [Factopia Voice Project Plan](https://claude.ai/code/artifact/386ec8c1-7405-436d-b044-ff9045de0579).
-This file is a snapshot of it for the repository, taken 9 October 2026.
+This file is a snapshot of it for the repository, taken 9 October 2026
+(updated for 3.0).
 
 ## Releases
 
@@ -12,16 +13,16 @@ This file is a snapshot of it for the repository, taken 9 October 2026.
 | 2.1 Captions | Speech to text, caption editor, styling, SRT and burned-in export | A 60-second video is captioned and exported in one sitting | Done (Mac, 7 Oct 2026) |
 | 2.2 Translate | English, Chinese and Burmese in every direction; caption translation; SRT import | Real translations run on the Mac and the Burmese and Chinese are judged good enough | Built; real-model test pending |
 | Later: Reader | On-screen caption reader (OCR) | When wanted | Postponed |
-| 3.0 Public beta | Installer, signed builds, updates, licence notices | Only if the app is to be sold | Not planned yet |
+| 3.0 Easy install | `.dmg` for Apple silicon Macs and `Setup.exe` for Windows 10+; own window; translation built in (no Ollama); models downloaded in the app without sign-in; welcome screen with the model terms; Storage, Performance, Updates, About; FriBiDi for Burmese | You and a friend install it without help on a Mac and a Windows PC | Beta built and checked on GitHub's Mac and Windows machines; your Mac and a Windows PC next |
 
 ## Backlog
 
 | Item | Release | Status |
 | --- | --- | --- |
-| Run on Windows | 2.0 to 2.2 | Open: the tests run on Windows in CI; nobody has used it there yet |
-| Real-model translation test on the Mac | 2.2 | Open |
-| Burmese burned-in captions on Mac and Windows: supply FriBiDi so Pillow can shape Burmese (LGPL, loaded at run time) | 2.2.x | Next: found by CI on 9 Oct 2026; SRT export works meanwhile |
-| Judge Burmese and Chinese output; choose 4B or 12B | 2.2 | Open |
+| Run on Windows | 3.0 | Open: the installer is built, installed and self-tested on GitHub's Windows machines; nobody has used it by hand yet |
+| Real-model translation test on the Mac | 3.0 | Open: run on GitHub instead on 9 Oct 2026; the Mac run is part of the beta check |
+| Burmese burned-in captions on Mac and Windows: supply FriBiDi so Pillow can shape Burmese | 3.0 | Done: bundled; raqm on in the packed Mac app |
+| Judge Burmese and Chinese output; choose 4B or 12B | 3.0 | Open: 4B Burmese measured poor on 9 Oct 2026; 12B sample running |
 | Voice tone improvement (rated about 60%) | Next | Not started |
 | Rename the app (it is more than a voice now) | Next | Not started |
 | Voice picker and more voices (Kokoro has 54) | Later | Later |
@@ -31,7 +32,7 @@ This file is a snapshot of it for the repository, taken 9 October 2026.
 | Channel tracker on YouTube's analytics API | Later | Later |
 | Phone access over Wi-Fi, behind a PIN | Later | Later |
 | Replace the GPL text-to-phoneme step | 3.0 | Only for a closed-source release |
-| Installer and signed builds | 3.0 | Only if going public |
+| Signed builds (no first-open warning) | Later | Apple Developer ID US$99 a year; Windows certificate; optional |
 
 ## How a release is made
 

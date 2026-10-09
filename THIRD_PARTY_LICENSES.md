@@ -2,7 +2,8 @@
 
 Everything Factopia Voice downloads, installs or bundles, and what each
 licence means for the project. Update this file whenever a dependency or
-model is added or changed. Checked 7 October 2026.
+model is added or changed. Checked 7 October 2026; installer parts added
+9 October 2026 (3.0).
 
 | Component | Role | Licence | Personal use | Distribute in a paid closed-source app |
 | --- | --- | --- | --- | --- |
@@ -19,7 +20,15 @@ model is added or changed. Checked 7 October 2026.
 | Pillow | Draws captions | MIT-CMU | Yes | Yes, with notice |
 | imageio-ffmpeg | Locates the bundled ffmpeg | BSD-2-Clause | Yes | Yes, with notice |
 | ffmpeg binary (inside imageio-ffmpeg) | Reads and writes video | GPL build (includes x264) | Yes | **Check before 3.0**: ship an LGPL build or meet the GPL's terms |
-| TranslateGemma 4B / 12B models | Translation (2.2) | Gemma Terms of Use | Yes | Model not bundled (Ollama downloads it); Google claims no rights in outputs; Prohibited Use Policy applies |
+| TranslateGemma 4B / 12B models | Translation (2.2) | Gemma Terms of Use | Yes | Not bundled: the app downloads the GGUF conversion from the public mirror `mradermacher/translategemma-*-GGUF` on Hugging Face after the user agrees to the terms; Google claims no rights in outputs; Prohibited Use Policy applies |
+| llama.cpp (llama-server) | Runs the translation model inside the app (3.0) | MIT | Yes | Yes, with notice |
+| FriBiDi | Text shaping for Burmese on Mac and Windows (3.0) | LGPL-2.1-or-later | Yes | Yes, as a separate replaceable library (it is), with its source available |
+| pywebview | The app window (3.0) | BSD-3-Clause | Yes | Yes, with notice |
+| pythonnet, clr-loader (Windows) | Lets pywebview use WebView2 | MIT | Yes | Yes, with notice |
+| PyObjC (Mac) | Lets pywebview use the Mac's WebKit | MIT | Yes | Yes, with notice |
+| Microsoft Edge WebView2 Runtime (Windows) | Shows the window's contents | Microsoft software licence | Yes | Not bundled: the installer runs Microsoft's own bootstrapper when it is missing |
+| PyInstaller bootloader | Starts the packed app | GPL-2.0 with a bootloader exception | Yes | Yes: the exception allows any licence for the packed app |
+| Inno Setup | Makes the Windows installer | Inno Setup licence (free, modified BSD style) | Yes | Yes |
 | Ollama | Runs the translation model (separate app the user installs) | MIT | Yes | Not bundled |
 | fontTools | Checks which letters a font has | MIT | Yes | Yes, with notice |
 | uv | Sets up Python on first start | Apache 2.0 or MIT | Yes | Not bundled |

@@ -9,13 +9,6 @@ name: Installers
 on:
   workflow_dispatch:
   workflow_call:
-  push:
-    branches: ["v3-*"]
-    paths:
-      - "factopia_voice/**"
-      - "packaging/**"
-      - "requirements.txt"
-      - ".github/workflows/installers.yml"
   pull_request:
     paths:
       - "factopia_voice/**"

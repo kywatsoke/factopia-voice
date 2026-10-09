@@ -45,9 +45,9 @@ and Windows; nothing is written per platform except the two small launchers.
 - `languages.py` holds what differs between English, Chinese and Burmese:
   detection, how words join, sentence and clause marks, and where a line may
   break (words, characters, Burmese syllables).
-- `translate/ollama.py` implements the Translator contract with TranslateGemma
-  through Ollama's local API, using the model's official prompt. Ollama is a
-  separate app: it handles the GPU, the download and keeping the model loaded.
+- `translate/llamacpp.py` (3.0) implements the Translator contract with
+  TranslateGemma run by the bundled llama-server, using the model's official
+  prompt. `translate/ollama.py` does the same through the separate Ollama app.
 - Caption translation groups lines into sentences, translates each with its
   context, then spreads the result back over the sentence's time.
 - A translated track is a new project that links (not copies) the video.
@@ -68,9 +68,35 @@ and Windows; nothing is written per platform except the two small launchers.
 | `projects.py` | Caption projects on disk and their background jobs |
 | `render.py`, `fonts.py` | Drawing captions; finding fonts that have the right letters |
 | `languages.py` | English, Chinese, Burmese rules |
-| `translate/` | Translators (TranslateGemma through Ollama) |
+| `translate/` | Translators: TranslateGemma built in (llama.cpp) or through Ollama |
 | `web/` | The interface: HTML, CSS, plain JavaScript |
-| `tests/` | Automated tests with a fake engine and a fake Ollama |
+| `shell.py`, `workers.py`, `jobs.py` | App window, helper processes, background jobs |
+| `storage.py`, `updates.py`, `about.py`, `shaping.py`, `selftest.py` | Storage panel, update check, licences screen, Burmese shaping, build checks |
+| `tests/` | Automated tests with a fake engine, a fake Ollama and a fake llama-server |
+
+## The installed app (3.0)
+
+```
+ Factopia Voice.app / Factopia Voice.exe   (PyInstaller: Python + packages inside)
+   __main__.py   one window (pywebview) or the browser; a second start brings it forward
+   server.py     the same local API and interface as before, on a free port
+   workers.py    the app starts itself with --fv-worker for speech recognition
+   shaping.py    loads the bundled FriBiDi before Pillow, so Burmese is shaped
+   translate/llamacpp.py   starts the bundled llama-server on demand (graphics chip,
+                           else processor) and stops it after 10 idle minutes
+   storage.py    sizes, removing models, moving models, importing a 2.x folder
+   updates.py    once-a-day check of GitHub releases
+   selftest.py   --self-test: the checks the Installers workflow runs
+ bundled beside Python: llama/ (llama-server), fribidi/, licenses/
+```
+
+| Where | Installed (Mac / Windows) | From source |
+| --- | --- | --- |
+| Settings, projects, logs | `~/Library/Application Support/Factopia Voice` / `%LOCALAPPDATA%\Factopia Voice` | `data/` |
+| Models | `models/` inside that folder, or wherever Settings moved them (`locations.json`) | `data/models` |
+| Files people make | `Documents/Factopia Voice` | `data/output` |
+
+`packaging/` holds the build: see [packaging/README.md](../packaging/README.md).
 
 ## Why this shape
 
@@ -82,8 +108,8 @@ and Windows; nothing is written per platform except the two small launchers.
   later is one new file plus one line in `engines/__init__.py`. Nothing else
   changes, and old clips keep a record of which engine made them.
 - **Translators are plug-ins too.** `translate/base.py` defines the contract
-  (`status`, `setup`, `translate`, `translate_many`); TranslateGemma through
-  Ollama is one file. The pipeline calls it before speech when a script is in
+  (`status`, `setup`, `translate`, `translate_many`); the built-in engine and
+  Ollama are one file each. The pipeline calls it before speech when a script is in
   another language.
 - **Data is separate from code.** Everything learned or created is in `data/`.
   Updating the program is replacing the code folder.
@@ -122,16 +148,13 @@ Postponed on 9 October 2026 because it is the heaviest component.
 **Phone access.** Bind the server to the local network behind a PIN and show
 the address as a QR code. Kept out of 2.0 on purpose: it widens exposure.
 
-**A packaged installer.** PyInstaller or Briefcase can wrap this folder into a
-.app and .exe once the feature set settles.
-
 ## Resources (measured)
 
 | Part | Measured on | Speed | Memory | Disk |
 | --- | --- | --- | --- | --- |
 | Kokoro 82M voice | 2-core cloud CPU, no GPU | 24 s of audio in about 10 s | about 1.1 GB | 354 MB |
 | Parakeet speech to text | 2-core cloud CPU | 8.1x real time; 1.6% word errors on the test clips | about 1.1 GB, freed when the worker exits | 460 MB |
-| TranslateGemma 4B / 12B | not yet measured on the Mac | | Ollama's own process | 3.3 GB / 8.1 GB |
+| TranslateGemma 4B (llama.cpp, Q4_K_M) | 4-core cloud CPU, no GPU | about 12 s per sentence | llama-server's own process | 2.49 GB |
 
 A recent laptop is faster than the cloud CPU.
 
