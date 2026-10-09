@@ -1,14 +1,23 @@
-# Publishes a release when a version tag such as v2.2.1 is pushed:
+# Publishes a release of the version in factopia_voice/__init__.py:
 # runs the tests on all three platforms, builds the zip, and attaches it to a
 # GitHub release whose notes are that version's section of CHANGELOG.md.
+#
+# Two ways to start it:
+#   - Actions tab > Release > Run workflow (creates the tag v<version>)
+#   - pushing a tag such as v2.2.1 from a computer with git
 name: Release
 
 on:
+  workflow_dispatch:
   push:
     tags: ["v*"]
 
 permissions:
   contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
   tests:
@@ -19,18 +28,26 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v7
 
-      - name: Check the tag matches the app version
+      - name: Read the version
         id: version
         run: |
           version=$(sed -n 's/^__version__ = "\(.*\)"/\1/p' factopia_voice/__init__.py)
-          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+          tag="v$version"
+          if [ "$GITHUB_REF_TYPE" = "tag" ] && [ "$GITHUB_REF_NAME" != "$tag" ]; then
             echo "::error::Tag $GITHUB_REF_NAME does not match __version__ $version in factopia_voice/__init__.py"
             exit 1
           fi
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "::error::Release $tag already exists. Raise __version__ and add a CHANGELOG.md section first."
+            exit 1
+          fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
 
       - name: Build the zip
         run: scripts/package.sh
@@ -48,8 +65,8 @@ jobs:
 
       - name: Publish the release
         env:
-          GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.version.outputs.version }}
+          TAG: ${{ steps.version.outputs.tag }}
         run: >
-          gh release create "$GITHUB_REF_NAME" "dist/FactopiaVoice-$VERSION.zip"
-          --title "Factopia Voice $VERSION" --notes-file notes.md --verify-tag
+          gh release create "$TAG" "dist/FactopiaVoice-$VERSION.zip"
+          --target "$GITHUB_SHA" --title "Factopia Voice $VERSION" --notes-file notes.md

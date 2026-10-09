@@ -8,7 +8,8 @@ so a later change can be judged against the reason for the first.
 
 - **Chosen:** the private repository `kywatsoke/factopia`. Tests run on Linux and
   Windows for every push; macOS is added for pull requests, version tags and
-  manual runs. A version tag builds the release zip.
+  manual runs. The Release workflow, started from the Actions tab, builds
+  the zip and tags the version.
 - **Why:** GitHub Free gives 2,000 Actions minutes a month for private
   repositories, and a macOS minute counts as ten. Windows is the platform
   nobody has tried by hand yet, so it runs every time.

@@ -99,16 +99,13 @@ Settings > Billing and plans.
 2. Add a section to `CHANGELOG.md` headed `## <version> - <date>`. The release
    notes are taken from that section, so write it for the user.
 3. Update `THIRD_PARTY_LICENSES.md` if a dependency or model changed.
-4. Commit, then tag and push:
-
-   ```bash
-   git tag v2.2.1
-   git push origin main v2.2.1
-   ```
-
-5. The **Release** workflow runs the tests on all three platforms, builds
-   `FactopiaVoice-<version>.zip` with `scripts/package.sh`, and publishes it
-   on the Releases page with the changelog section as notes.
+4. Commit and push to `main`, and wait for the Tests run to pass.
+5. On GitHub, open **Actions > Release > Run workflow** and run it on `main`.
+   It runs the tests on all three platforms, builds
+   `FactopiaVoice-<version>.zip` with `scripts/package.sh`, creates the tag
+   `v<version>`, and publishes the zip on the Releases page with the changelog
+   section as notes. It refuses to run if that version was already released.
+   (Pushing a tag such as `v2.2.1` from a computer with git does the same.)
 6. Download the zip and run it through the manual checklist in
    [TESTING.md](TESTING.md) on the Mac (and Windows when available).
 

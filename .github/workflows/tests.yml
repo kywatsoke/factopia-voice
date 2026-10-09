@@ -38,13 +38,20 @@ jobs:
       - uses: astral-sh/setup-uv@v10.2.0
 
       - name: Show what this machine can draw
-        # Burmese and Chinese captions need Pillow's raqm text layout; print it
-        # so a platform without it is spotted early.
-        run: >
-          uv run --python 3.12 --no-project --with-requirements requirements.txt
-          python -c "import sys, PIL; from PIL import features as f; print(sys.version.split()[0], 'Pillow', PIL.__version__, 'raqm', f.check('raqm'), f.version('raqm'))"
+        # Burmese and Chinese captions need Pillow's raqm text layout. The
+        # result is shown on the run's summary page.
+        run: |
+          info=$(uv run --python 3.12 --no-project --with-requirements requirements.txt \
+            python -c "import sys, PIL; from PIL import features as f; print('Python', sys.version.split()[0], '/ Pillow', PIL.__version__, '/ raqm', f.version('raqm') if f.check('raqm') else 'missing')")
+          echo "$info"
+          echo "::notice title=Text layout on $RUNNER_OS::$info"
 
       - name: Run the tests
-        run: >
-          uv run --python 3.12 --no-project --with-requirements requirements.txt
-          --with-requirements requirements-dev.txt pytest -q -rs
+        run: |
+          set +e
+          uv run --python 3.12 --no-project --with-requirements requirements.txt \
+            --with-requirements requirements-dev.txt pytest -q -rs 2>&1 | tee pytest.txt
+          status=${PIPESTATUS[0]}
+          echo "::notice title=Tests on $RUNNER_OS::$(tail -n 1 pytest.txt)"
+          grep '^SKIPPED' pytest.txt | while read -r line; do echo "::notice title=Skipped on $RUNNER_OS::$line"; done
+          exit $status

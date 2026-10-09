@@ -135,8 +135,8 @@ uv run --python 3.12 --no-project --with-requirements requirements.txt \
 ```
 
 Every push to GitHub runs the tests on Linux and Windows; pull requests,
-version tags and manual runs add macOS. Pushing a tag such as `v2.2.1` builds
-the release zip and publishes it on the Releases page.
+version tags and manual runs add macOS. **Actions > Release > Run workflow**
+builds the release zip and publishes it on the Releases page.
 
 | Document | Read it for |
 | --- | --- |
