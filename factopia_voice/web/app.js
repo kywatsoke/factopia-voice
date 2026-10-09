@@ -88,17 +88,26 @@ $("go").addEventListener("click", generate);
 document.addEventListener("keydown", e => { if ((e.metaKey || e.ctrlKey) && e.key === "Enter") generate(); });
 
 const audioUrl = c => "/audio/" + encodeURIComponent(c.file);
+const native = () => !!(S && S.shell === "native");
+const revealLabel = () => (S && S.platform === "darwin") ? "Show in Finder" : "Show in folder";
+const reveal = file => api("/api/reveal", { file }).catch(e => status(e.message, "err"));
+let lastClip = null;
 function showResult(clip, play) {
+  lastClip = clip;
   $("result").hidden = false;
   $("resTitle").textContent = clip.title;
   $("resMeta").textContent = clip.seconds + " sec  ·  " + clip.format.toUpperCase() + "  ·  " + clip.voice + " " + (+clip.speed).toFixed(2) + "x";
   $("resAudio").src = audioUrl(clip);
   $("resDownload").href = audioUrl(clip) + "?download=1";
   $("resDownload").download = clip.file;
+  $("resDownload").hidden = native();             // in the app window the file is already in your folder
+  $("resFolder").textContent = revealLabel();
+  $("resFolder").classList.toggle("primary", native());
   if (play) { stopPlayer(); $("resAudio").play().catch(() => {}); }
 }
-const openFolder = () => api("/api/open", {}).catch(() => {});
-for (const id of ["resFolder", "libFolder", "sOpen"]) $(id).addEventListener("click", openFolder);
+const openFolder = (what = "output") => api("/api/open", { what }).catch(() => {});
+$("resFolder").addEventListener("click", () => lastClip && reveal(lastClip.file));
+for (const id of ["libFolder", "sOpen"]) $(id).addEventListener("click", () => openFolder("output"));
 
 /* ---------- shared small player ---------- */
 const player = $("player");
@@ -131,7 +140,9 @@ function renderLibrary() {
     play.addEventListener("click", () => toggle(play, audioUrl(c)));
     const reuse = el("button", { className: "btn ghost", textContent: "Reuse script" });
     reuse.addEventListener("click", () => { $("script").value = c.script; draft.set(c.script); measure(); show("studio"); $("script").focus(); });
-    const dl = el("a", { className: "btn ghost", textContent: "Download", href: audioUrl(c) + "?download=1", download: c.file });
+    const dl = native()
+      ? Object.assign(el("button", { className: "btn ghost", textContent: revealLabel() }), { onclick: () => reveal(c.file) })
+      : el("a", { className: "btn ghost", textContent: "Download", href: audioUrl(c) + "?download=1", download: c.file });
     const cap = el("button", { className: "btn ghost", textContent: "Captions" });
     cap.addEventListener("click", async () => { cap.disabled = true; try { stopPlayer(); await window.captionClip(c.id); } catch (e) { cap.textContent = e.message; } cap.disabled = false; });
     const del = el("button", { className: "btn ghost", textContent: "Delete" });
@@ -178,6 +189,7 @@ $("sQuit").addEventListener("click", async () => {
   ready = false; $("setup").hidden = false; $("setupBar").parentElement.hidden = true; $("setupNote").hidden = true;
   $("setupTitle").textContent = "Factopia Voice has stopped"; $("setupText").textContent = "You can close this window.";
 });
+setInterval(() => { fetch("/api/alive", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }).catch(() => {}); }, 10000);
 
 /* ---------- state ---------- */
 function paint(first) {
@@ -188,7 +200,7 @@ function paint(first) {
     $("sVoice").textContent = `${v.name}, ${v.language_name}`;
   }
   if (S.engine) $("sEngine").textContent = `${S.engine.name} (${S.engine.license} licence), runs offline on this computer`;
-  $("sFolder").textContent = S.folder; $("sData").textContent = S.data_folder;
+  $("sFolder").textContent = S.folder;
   $("sVersion").textContent = S.version;
   $("maxLabel").textContent = p.max_seconds;
   if (first) {
@@ -205,10 +217,13 @@ async function boot() {
   for (;;) {
     try {
       S = await api("/api/state");
+      if (S.welcome && window.welcome) { $("setup").hidden = true; await window.welcome(); $("setup").hidden = false; continue; }
       const st = S.status, bar = $("setupBar").parentElement;
       if (st.phase === "ready") {
         ready = true; $("setup").hidden = true; $("dot").className = "dot ok"; $("readyText").textContent = "Voice ready";
-        paint(first); return;
+        paint(first);
+        if (window.checkUpdate) window.checkUpdate(false);
+        return;
       }
       if (st.phase === "error") {
         $("setupTitle").textContent = "The voice could not start"; $("setupText").textContent = st.detail;

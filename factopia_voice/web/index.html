@@ -23,6 +23,11 @@
   </aside>
 
   <main>
+    <div class="banner" id="updBanner" hidden>
+      <span id="updText"></span>
+      <a class="btn small primary" id="updGet" target="_blank" rel="noopener">Get it</a>
+      <button class="btn small ghost" id="updLater">Later</button>
+    </div>
     <!-- Studio -->
     <section id="view-studio" class="view on">
       <header><h1>New voiceover</h1><p>Paste a script and get a narration file. Everything runs on this computer.</p></header>
@@ -194,20 +199,87 @@ Leave a blank line for a short pause, or write [pause 0.8] for an exact one."></
     <!-- Settings -->
     <section id="view-settings" class="view">
       <header><h1>Settings</h1><p>How this copy of Factopia Voice is set up.</p></header>
-      <div class="card rows">
-        <div><span>Voice</span><b id="sVoice"></b></div>
-        <div><span>Speech engine</span><b id="sEngine"></b></div>
-        <div><span>Target length</span><b><input type="number" id="sMax" min="10" max="180" step="5"> seconds</b></div>
-        <div><span>Clips are saved in</span><b class="path" id="sFolder"></b></div>
-        <div><span>Settings and dictionary</span><b class="path" id="sData"></b></div>
-        <div><span>Translation quality</span><b><select id="sQuality"><option value="standard">Standard (TranslateGemma 4B, 3.3 GB)</option><option value="high">High (TranslateGemma 12B, 8.1 GB)</option></select> <span class="muted" id="sTranslate"></span></b></div>
-        <div><span>Version</span><b id="sVersion"></b></div>
+      <div class="settings">
+        <div class="card rows">
+          <div class="label">General</div>
+          <div><span>Voice</span><b id="sVoice"></b></div>
+          <div><span>Speech engine</span><b id="sEngine"></b></div>
+          <div><span>Target length</span><b><input type="number" id="sMax" min="10" max="180" step="5"> seconds</b></div>
+          <div><span>Your files are saved in</span><b class="path" id="sFolder"></b></div>
+        </div>
+        <div class="card rows">
+          <div class="label">Translation</div>
+          <div><span>Engine</span><b><select id="sTrEngine" aria-label="Translation engine"></select></b></div>
+          <div><span>Model</span><b><select id="sQuality" aria-label="Translation model"></select> <span class="muted" id="sTranslate"></span></b></div>
+        </div>
+        <div class="card rows">
+          <div class="label">Performance</div>
+          <div><span>Graphics chip or card</span><b><label class="check"><input type="checkbox" id="sAccel"> Use it when it helps</label></b></div>
+          <div><span>Translation</span><b id="pTranslation">Checking</b></div>
+          <div><span>Video export</span><b id="pVideo">Checking</b></div>
+          <div><span>Voice and speech to text</span><b id="pVoice">Checking</b></div>
+        </div>
+        <div class="card">
+          <div class="label">Storage</div>
+          <div class="list storage" id="stItems"></div>
+          <div class="rows compact">
+            <div><span>Models folder</span><b class="path" id="stModels"></b></div>
+            <div><span>Free space there</span><b id="stFree"></b></div>
+          </div>
+          <div class="row">
+            <button class="btn small" id="stOpenModels">Open models folder</button>
+            <button class="btn small" id="stMove" hidden>Move models to another folder</button>
+            <button class="btn small" id="stImport" hidden>Bring in work from an earlier version</button>
+          </div>
+          <div class="bar" id="stBar" hidden><div></div></div>
+          <div class="hint left" id="stMsg"></div>
+        </div>
+        <div class="card rows">
+          <div class="label">Updates</div>
+          <div><span>New versions</span><b><label class="check"><input type="checkbox" id="sUpdates"> Check once a day</label>
+            <button class="btn small" id="sCheckNow">Check now</button></b></div>
+          <div><span>Status</span><b id="sUpdateText">Not checked yet</b></div>
+        </div>
+        <div class="card about">
+          <div class="label">About and licences</div>
+          <p><b>Factopia Voice <span id="sVersion"></span></b>. Everything runs on this computer; nothing you make is uploaded.</p>
+          <div class="list" id="aModels"></div>
+          <details><summary>Software it is built with</summary><div class="list" id="aSoftware"></div></details>
+          <div class="row">
+            <a class="btn small" id="aSource" target="_blank" rel="noopener">Source code</a>
+            <button class="btn small" id="aLicences">Open licence files</button>
+            <button class="btn small" id="aLogs">Open log folder</button>
+          </div>
+        </div>
+        <div class="row"><button class="btn" id="sOpen">Open your files</button><button class="btn danger" id="sQuit">Quit Factopia Voice</button></div>
       </div>
-      <div class="row"><button class="btn" id="sOpen">Open clips folder</button><button class="btn danger" id="sQuit">Quit Factopia Voice</button></div>
     </section>
   </main>
 </div>
 
+<div class="overlay" id="welcome" hidden>
+  <div class="setup-card welcome-card">
+    <img src="/icon.svg" alt="" width="48" height="48">
+    <h2>Welcome to Factopia Voice</h2>
+    <p>Voiceovers, captions and translation, made on this computer. Nothing you make is uploaded.</p>
+    <div class="label">Free AI models it uses</div>
+    <div class="models">
+      <div><b>Voice</b><span><a href="https://huggingface.co/hexgrad/Kokoro-82M" target="_blank" rel="noopener">Kokoro 82M</a> · Apache 2.0 · 340 MB, downloaded now</span></div>
+      <div><b>Speech to text</b><span><a href="https://huggingface.co/nvidia/parakeet-tdt-0.6b-v2" target="_blank" rel="noopener">Parakeet</a> by NVIDIA · CC BY 4.0 · 480 MB, when you first make captions</span></div>
+      <div><b>Translation</b><span>TranslateGemma by Google · Gemma Terms of Use · <span id="wTrSize">2.5 GB</span>, when you first translate</span></div>
+    </div>
+    <label class="agree"><input type="checkbox" id="wAgree"> <span>I agree to the terms of these models, including Google's
+      <a href="https://ai.google.dev/gemma/terms" target="_blank" rel="noopener">Gemma Terms of Use</a> and
+      <a href="https://ai.google.dev/gemma/prohibited_use_policy" target="_blank" rel="noopener">Prohibited Use Policy</a>.</span></label>
+    <button class="btn primary big" id="wGo" disabled>Agree and continue</button>
+    <div class="welcome-import" id="wImportBox" hidden>
+      <span class="muted">Used Factopia Voice before?</span>
+      <button class="btn ghost" id="wImport">Bring in your earlier work</button>
+      <div class="bar" id="wBar" hidden><div></div></div>
+      <div class="hint" id="wMsg"></div>
+    </div>
+  </div>
+</div>
 <div class="overlay" id="setup">
   <div class="setup-card">
     <img src="/icon.svg" alt="" width="44" height="44">
@@ -221,5 +293,7 @@ Leave a blank line for a short pause, or write [pause 0.8] for an exact one."></
 <script src="/app.js"></script>
 <script src="/captions.js"></script>
 <script src="/translate.js"></script>
+<script src="/welcome.js"></script>
+<script src="/settings.js"></script>
 </body>
 </html>

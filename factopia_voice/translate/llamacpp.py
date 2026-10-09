@@ -49,7 +49,8 @@ class GGUF:
 # Pinned files (revision and checksum) so every download is the file that was tested.
 MODELS_AVAILABLE = {
     "standard": GGUF("translategemma-4b-it.Q4_K_M.gguf", "mradermacher/translategemma-4b-it-GGUF",
-                     "main", 0, "", "TranslateGemma 4B"),
+                     "d37868f759d2f817a43d28dd80cf9f982ffa62fd", 2_489_909_760,
+                     "81200d03e843d2ec1ece6eeafe7d13cb6e5211e1fcd336ade55790b683a08330", "TranslateGemma 4B"),
     "high": GGUF("translategemma-12b-it.Q4_K_M.gguf", "mradermacher/translategemma-12b-it-GGUF",
                  "main", 0, "", "TranslateGemma 12B"),
 }
@@ -93,7 +94,9 @@ class _Server:
         self.proc = None
         self.port = None
         self.model = None
-        self.mode = None            # "gpu" or "cpu"
+        self.allowed = None         # whether the graphics chip was allowed when it started
+        self.mode = None            # "gpu" or "cpu": what it actually runs on
+        self.device = None          # e.g. "Apple M4 GPU", from the engine's log
         self.lock = threading.RLock()
         self.timer = None
         self.log = None
@@ -121,7 +124,9 @@ class _Server:
                           "-c", "4096", "-np", "1"]
         args += ["-ngl", "99"] if gpu else ["-ngl", "0", "--device", "none"]
         LOGS.mkdir(parents=True, exist_ok=True)
-        self.log = open(LOGS / "translation-engine.log", "ab")
+        log_path = LOGS / "translation-engine.log"
+        start = log_path.stat().st_size if log_path.exists() else 0
+        self.log = open(log_path, "ab")
         flags = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
         self.proc = subprocess.Popen(args, stdout=self.log, stderr=self.log, stdin=subprocess.DEVNULL,
                                      creationflags=flags, start_new_session=sys.platform != "win32")
@@ -131,6 +136,7 @@ class _Server:
                 return False
             try:
                 if self._get("/health")[0] == 200:
+                    self.device = _device_from_log(log_path, start) if gpu else None
                     return True
             except (urllib.error.URLError, OSError, ValueError):
                 pass
@@ -141,12 +147,13 @@ class _Server:
     def ensure(self, model_path, allow_gpu):
         with self.lock:
             self._touch()
-            if self.running() and self.model == str(model_path) and (self.mode == "gpu") == allow_gpu:
+            if self.running() and self.model == str(model_path) and self.allowed == allow_gpu:
                 return
             self.stop()
             for gpu in ([True, False] if allow_gpu else [False]):
                 if self._launch(model_path, gpu):
-                    self.model, self.mode = str(model_path), "gpu" if gpu else "cpu"
+                    self.model, self.allowed = str(model_path), allow_gpu
+                    self.mode = "gpu" if gpu and self.device else "cpu"
                     return
                 self.stop()
             raise RuntimeError("The translation engine could not start. Details are in the log folder "
@@ -175,7 +182,21 @@ class _Server:
             if self.log:
                 self.log.close()
                 self.log = None
-            self.model = self.mode = None
+            self.model = self.mode = self.allowed = self.device = None
+
+
+def _device_from_log(path, start):
+    """The graphics device llama-server says it is using, e.g. "Apple M4 GPU".
+    None when it runs on the processor only."""
+    import re
+    try:
+        with open(path, "rb") as f:
+            f.seek(start)
+            text = f.read(400_000).decode("utf-8", "replace")
+    except OSError:
+        return None
+    m = re.search(r"using device (?:\S+) \(([^)]+)\)", text) or re.search(r"GPU name:\s*(.+)", text)
+    return m.group(1).strip() if m else None
 
 
 SERVER = _Server()
@@ -203,7 +224,9 @@ class BuiltinTranslator(Translator):
         if not self.installed():
             return {"ready": False, "step": "download",
                     "message": f"Translation needs a one-time download of {self.spec.label} ({self.size})."}
-        state = f" on the {'graphics chip' if SERVER.mode == 'gpu' else 'processor'}" if SERVER.running() else ""
+        state = ""
+        if SERVER.running():
+            state = f", running on the {SERVER.device}" if SERVER.mode == "gpu" else ", running on the processor"
         return {"ready": True, "step": "ready", "message": f"Ready: {self.spec.label}, built in{state}."}
 
     def setup(self, on_progress):

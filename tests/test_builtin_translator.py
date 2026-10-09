@@ -1,3 +1,4 @@
+import dataclasses
 import hashlib
 import json
 import sys
@@ -20,6 +21,7 @@ def builtin(monkeypatch, tmp_path, clean_data):
     monkeypatch.setenv("FAKE_LLAMA_LOG", str(log))
     llamacpp.SERVER.stop()
     t = llamacpp.BuiltinTranslator("standard")
+    t.spec = dataclasses.replace(t.spec, size=0, sha256="")      # tiny stand-in files count as the model
     t.path.parent.mkdir(parents=True, exist_ok=True)
     t.path.unlink(missing_ok=True)
     yield t, log
@@ -57,7 +59,9 @@ def test_translates_with_the_official_prompt_on_the_graphics_chip(builtin):
     assert launch[launch.index("-ngl") + 1] == "99" and "--device" not in launch
     assert prompt.startswith("<start_of_turn>user\nYou are a professional English (en) to Burmese (my) translator.")
     assert prompt.endswith("<end_of_turn>\n<start_of_turn>model\n")
-    assert llamacpp.SERVER.mode == "gpu" and "graphics chip" in t.status()["message"]
+    assert llamacpp.SERVER.mode == "gpu" and "Fake GPU" in t.status()["message"]
+    t.translate("again", "en", "my")
+    assert len([e for e in log_lines(log) if "args" in e]) == 1          # the engine stays loaded
 
 
 def test_processor_only_setting_and_gpu_failure_fall_back_to_the_processor(builtin, monkeypatch):
@@ -73,8 +77,11 @@ def test_processor_only_setting_and_gpu_failure_fall_back_to_the_processor(built
     llamacpp.SERVER.stop()
     config.profile_store.save({**profile, "acceleration": "auto"})
     monkeypatch.setenv("FAKE_LLAMA_FAIL_GPU", "1")
+    before = len([e for e in log_lines(log) if "args" in e])
     assert t.translate("Hi", "en", "zh") == "[Chinese] Hi"
-    assert llamacpp.SERVER.mode == "cpu"
+    assert t.translate("Again", "en", "zh") == "[Chinese] Again"
+    assert llamacpp.SERVER.mode == "cpu" and "processor" in t.status()["message"]
+    assert len([e for e in log_lines(log) if "args" in e]) == before + 1     # no restart on every sentence
 
 
 def test_engine_choice(builtin, monkeypatch):

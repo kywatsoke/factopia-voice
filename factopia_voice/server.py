@@ -58,7 +58,7 @@ def performance():
     else:
         translation = "Processor"
     if llamacpp.SERVER.running():
-        translation = ("Graphics chip" if llamacpp.SERVER.mode == "gpu" else "Processor") + " (running now)"
+        translation = (llamacpp.SERVER.device if llamacpp.SERVER.mode == "gpu" else "Processor") + " (running now)"
     encoder = media.hardware_encoder() if on else None
     return {"acceleration": "auto" if on else "off", "translation": translation,
             "video": media.LABELS[encoder], "voice": "Processor (already faster than real time)",

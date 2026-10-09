@@ -273,12 +273,17 @@
   });
 
   /* ---------- export ---------- */
+  let lastExport = null;
   function showResult(r, meta) {
     const url = "/audio/" + encodeURIComponent(r.file);
+    lastExport = r.file;
     $("capResult").hidden = false; $("capResultName").textContent = r.file; $("capResultMeta").textContent = meta;
     $("capResultDownload").href = url + "?download=1"; $("capResultDownload").download = r.file;
+    $("capResultDownload").hidden = native();
+    $("capResultFolder").textContent = revealLabel();
+    $("capResultFolder").classList.toggle("primary", native());
   }
-  $("capResultFolder").addEventListener("click", () => api("/api/open", {}).catch(() => {}));
+  $("capResultFolder").addEventListener("click", () => lastExport && reveal(lastExport));
   $("capExportSrt").addEventListener("click", async () => {
     try { C.dirty = true; await save(); const r = await api("/api/captions/export", { id: C.p.id, kind: "srt" });
       showResult(r, C.p.lines.length + " lines"); say("capExportStatus", "Subtitle file saved."); }
@@ -291,7 +296,7 @@
       const job = await api("/api/captions/export", { id: C.p.id, kind: "video" });
       const r = await pollJob(job, j => { bar("capExportBar", j.percent); say("capExportStatus", j.detail + " " + j.percent + "%", "busy"); });
       bar("capExportBar", null); say("capExportStatus", "Video exported in " + r.took + " seconds.");
-      showResult(r, r.megabytes + " MB");
+      showResult(r, r.megabytes + " MB" + (r.encoder ? "  ·  " + r.encoder : ""));
     } catch (e) { bar("capExportBar", null); say("capExportStatus", e.message, "err"); }
     btn.disabled = false;
   });

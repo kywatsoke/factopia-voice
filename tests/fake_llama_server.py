@@ -22,6 +22,8 @@ def main():
         sys.exit("no GPU here")
     if not os.path.exists(model):
         sys.exit("model not found")
+    if gpu:
+        print("llama_model_load_from_file_impl: using device FakeGPU (Fake GPU)", file=sys.stderr, flush=True)
     log = os.environ.get("FAKE_LLAMA_LOG")
     if log:
         with open(log, "a", encoding="utf-8") as f:
