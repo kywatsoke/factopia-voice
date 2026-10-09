@@ -6,7 +6,7 @@ how a release is published.
 ## Repository layout
 
 ```
-factopia/                     (github.com/kywatsoke/factopia)
+factopia-voice/               (github.com/kywatsoke/factopia-voice)
 ├── factopia_voice/           the app (see ARCHITECTURE.md for each module)
 │   └── web/                  the interface: index.html, app.css, *.js
 ├── tests/                    automated tests (pytest)
