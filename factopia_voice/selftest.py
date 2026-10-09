@@ -157,7 +157,7 @@ def main(argv):
                 if r.returncode != 0:
                     raise RuntimeError(r.stderr.decode("utf-8", "replace")[-400:])
                 words = json.loads(out.read_text(encoding="utf-8"))
-                heard = " ".join(w["word"] for w in words)
+                heard = " ".join(w["text"] for w in words)
                 if "honey" not in heard.lower():
                     raise RuntimeError(f"heard: {heard!r}")
                 return {"heard": heard}
