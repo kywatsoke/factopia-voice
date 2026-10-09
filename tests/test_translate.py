@@ -159,3 +159,15 @@ def test_burmese_is_not_translated(clean_data, monkeypatch):
     with pytest.raises(ValueError, match="English and Chinese"):
         projects.start_translate(burmese["id"], "en")
     assert languages.TRANSLATION == ("en", "zh")
+
+
+def test_speech_is_read_with_the_recogniser_for_the_project_language(clean_data):
+    from factopia_voice import projects
+    from factopia_voice.listeners import listener_for
+    assert listener_for("en").id == "parakeet"
+    assert listener_for("zh").id == "sensevoice"
+    assert listener_for("my") is None
+    srt = "1\n00:00:00,000 --> 00:00:01,000\nပျားရည်\n"
+    burmese = projects.import_srt(srt, "honey-my.srt")
+    with pytest.raises(ValueError, match="Burmese speech cannot be read yet"):
+        projects.start_transcribe(burmese["id"])

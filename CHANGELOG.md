@@ -2,6 +2,27 @@
 
 All notable changes to Factopia Voice. Versions follow MAJOR.MINOR.PATCH.
 
+## 3.0.0-beta.3 - 2026-10-09
+
+Chinese captions from Chinese speech.
+
+- Chinese speech is now read by its own speech model, SenseVoice (about
+  160 MB, downloaded the first time you make Chinese captions). Captions come
+  out in Simplified Chinese with punctuation and numbers, timed character by
+  character. Before, every recording went through the English model, which
+  turned Chinese into English-looking syllables.
+- Captions has a **The speech is in** choice next to **Create captions**. The
+  project's language decides which speech model is used. Burmese speech
+  cannot be read yet; the app says so and offers to load a subtitle file.
+- Chinese caption lines have no spaces between characters, are measured in
+  characters (Short 8, Medium 14, Sentences 26), and end at punctuation,
+  pauses, or where the speaker paused longest near the limit. A pasted
+  Chinese script is matched character by character.
+- Settings > Storage lists the English and Chinese speech models separately.
+- If a Chinese project already has the syllable captions, set
+  **The speech is in** to Chinese, press **Read speech again**, then
+  **Create captions**.
+
 ## 3.0.0-beta.2 - 2026-10-09
 
 Fixes the first start on a Mac, where the voice download stopped every time.

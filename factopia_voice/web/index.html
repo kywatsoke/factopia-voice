@@ -91,7 +91,8 @@ Leave a blank line for a short pause, or write [pause 0.8] for an exact one."></
             <div class="card" id="capStart">
               <div class="label">Step 1</div>
               <h2>Read the speech</h2>
-              <p class="muted">English speech is turned into timed lines on this computer. The first time, a speech model of about 480 MB is downloaded.</p>
+              <label class="spoken">The speech is in <select id="capSpoken"></select></label>
+              <p class="muted" id="capSpeechNote"></p>
               <label class="stack"><span>Exact script (optional). Paste the words that are spoken and the captions will use them exactly.</span>
                 <textarea id="capScript" rows="4" placeholder="Leave empty to use what the recogniser hears."></textarea></label>
               <div class="row"><button class="btn primary" id="capTranscribe">Create captions</button>
@@ -265,7 +266,9 @@ Leave a blank line for a short pause, or write [pause 0.8] for an exact one."></
     <div class="label">Free AI models it uses</div>
     <div class="models">
       <div><b>Voice</b><span><a href="https://huggingface.co/hexgrad/Kokoro-82M" target="_blank" rel="noopener">Kokoro 82M</a> · Apache 2.0 · 340 MB, downloaded now</span></div>
-      <div><b>Speech to text</b><span><a href="https://huggingface.co/nvidia/parakeet-tdt-0.6b-v2" target="_blank" rel="noopener">Parakeet</a> by NVIDIA · CC BY 4.0 · 480 MB, when you first make captions</span></div>
+      <div><b>Speech to text</b><span><a href="https://huggingface.co/nvidia/parakeet-tdt-0.6b-v2" target="_blank" rel="noopener">Parakeet</a> by NVIDIA (English) · CC BY 4.0 · 480 MB, and
+        <a href="https://github.com/FunAudioLLM/SenseVoice" target="_blank" rel="noopener">SenseVoice</a> by Alibaba (Chinese) ·
+        <a href="https://github.com/modelscope/FunASR/blob/main/MODEL_LICENSE" target="_blank" rel="noopener">FunASR Model Licence</a> · 160 MB, when you first make captions in that language</span></div>
       <div><b>Translation</b><span>TranslateGemma by Google · Gemma Terms of Use · <span id="wTrSize">2.5 GB</span>, when you first translate</span></div>
     </div>
     <label class="agree"><input type="checkbox" id="wAgree"> <span>I agree to the terms of these models, including Google's

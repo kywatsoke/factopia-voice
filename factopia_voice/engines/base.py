@@ -22,6 +22,7 @@ class ModelFile:
     name: str
     url: str
     size: int           # approximate bytes, for progress and integrity checks
+    sha256: str = None  # checked after download when given
 
 
 class Engine(ABC):

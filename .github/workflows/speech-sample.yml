@@ -1,0 +1,81 @@
+# Spike: compares speech-to-text models on Chinese speech (SenseVoice through
+# sherpa-onnx, Whisper small and large-v3-turbo through faster-whisper) on a
+# Mac (processor only, like the app), and saves the report to the ci-reports
+# branch as speech-sample-zh.md. Runs on pushes to spike/* branches or by hand.
+name: Speech sample
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["spike/*"]
+    paths: ["scripts/stt_sample.py", ".github/workflows/speech-sample.yml"]
+
+permissions:
+  contents: write
+
+jobs:
+  sample:
+    runs-on: macos-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    env:
+      GH_TOKEN: ${{ github.token }}
+      WORK: ${{ github.workspace }}/../stt-work
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v10.2.0
+
+      - name: Python with the candidates
+        run: |
+          uv venv --python 3.12 .venv-stt
+          packaging/ci_run.sh "Install" uv pip install --python .venv-stt/bin/python -r requirements.txt \
+            faster-whisper opencc-python-reimplemented "misaki[zh]"
+
+      - name: Models (Kokoro for the test recording, SenseVoice)
+        run: |
+          mkdir -p "$WORK/kokoro"
+          .venv-stt/bin/python -c "
+          import sys; sys.path.insert(0, '.')
+          from pathlib import Path
+          from factopia_voice.downloads import fetch
+          from factopia_voice.engines.kokoro import KokoroEngine
+          fetch(KokoroEngine().files(), Path('$WORK/kokoro'))"
+          gh api repos/k2-fsa/sherpa-onnx/releases/tags/asr-models --paginate -q '.assets[].name' > asr-assets.txt
+          echo "::notice title=Other Chinese-capable models::$(grep -iE 'fire-red|dolphin|paraformer|qwen|zh' asr-assets.txt | grep -v sense | tr '\n' ' ' | cut -c1-6000)"
+          folders=""
+          for asset in $(grep -i 'sense-voice-zh-en-ja-ko-yue' asr-assets.txt | grep -i 'int8' | grep 'tar.bz2' | sort); do
+            echo "::notice title=SenseVoice file::$asset"
+            (cd "$WORK" && gh release download asr-models -R k2-fsa/sherpa-onnx -p "$asset" --clobber && tar xjf "$asset")
+            folders="$folders $WORK/$(basename "$asset" .tar.bz2)"
+          done
+          echo "SENSEVOICE=$folders" >> "$GITHUB_ENV"
+          punct=$(gh api repos/k2-fsa/sherpa-onnx/releases/tags/punctuation-models --paginate -q '.assets[].name' \
+                  | grep -i 'ct-transformer-zh-en' | grep 'tar.bz2' | sort | tail -n 1)
+          echo "::notice title=Punctuation file::$punct"
+          if [ -n "$punct" ]; then
+            (cd "$WORK" && gh release download punctuation-models -R k2-fsa/sherpa-onnx -p "$punct" --clobber && tar xjf "$punct")
+            echo "PUNCT=$WORK/$(basename "$punct" .tar.bz2)" >> "$GITHUB_ENV"
+          fi
+          du -sh "$WORK"/*/ || true
+
+      - name: Compare
+        run: |
+          packaging/ci_run.sh "Compare" .venv-stt/bin/python scripts/stt_sample.py --work "$WORK" \
+            --sensevoice $SENSEVOICE --punct "$PUNCT" --out report.md
+          echo "::notice title=Speech sample::$(sed ':a;N;$!ba;s/%/%25/g;s/\n/%0A/g' report.md | cut -c1-60000)"
+
+      - name: Save the report to the ci-reports branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git fetch -q origin ci-reports; then
+            git worktree add -q ../reports FETCH_HEAD
+            git -C ../reports switch -q -c ci-reports
+          else
+            git worktree add -q --orphan -b ci-reports ../reports
+          fi
+          cp report.md ../reports/speech-sample-zh.md
+          cd ../reports && git add -A && git commit -q -m "Speech sample (Chinese), run ${{ github.run_id }}" && git push -q origin HEAD:ci-reports

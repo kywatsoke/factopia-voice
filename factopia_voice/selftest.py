@@ -5,7 +5,8 @@ workflow runs it on the packed app on macOS and Windows:
 
 Optional, when the models are at hand (the workflow caches them):
 FV_SELFTEST_VOICE=<folder with the Kokoro files> speaks a sentence, and
-FV_SELFTEST_SPEECH=<models folder with Parakeet> listens to it again."""
+FV_SELFTEST_SPEECH=<models folder with Parakeet and SenseVoice> listens to it
+again, and reads the Chinese test recording zh-test.wav in that folder."""
 import json
 import os
 import platform
@@ -210,6 +211,23 @@ def main(argv):
                     raise RuntimeError(f"heard: {heard!r}")
                 return {"heard": heard}
         check("listen", listen)
+
+    chinese = Path(speech_dir) / "zh-test.wav" if speech_dir else None
+    if chinese and chinese.is_file():
+        def listen_chinese():
+            from . import media as m
+            with tempfile.TemporaryDirectory() as tmp:
+                wav16, out = Path(tmp) / "a.wav", Path(tmp) / "words.json"
+                m.extract_audio(str(chinese), str(wav16))
+                r = subprocess.run(workers.command("listen", "sensevoice", speech_dir, wav16, out), cwd=workers.workdir(),
+                                   timeout=600, capture_output=True, creationflags=m.NO_WINDOW)
+                if r.returncode != 0:
+                    raise RuntimeError(r.stderr.decode("utf-8", "replace")[-400:])
+                heard = "".join(w["text"] for w in json.loads(out.read_text(encoding="utf-8")))
+                if "时间" not in heard:
+                    raise RuntimeError(f"heard: {heard!r}")
+                return {"heard": heard}
+        check("listen Chinese", listen_chinese)
 
     ok = all(r["ok"] or not r["required"] for r in results.values())
     summary = {"ok": ok, "checks": results}

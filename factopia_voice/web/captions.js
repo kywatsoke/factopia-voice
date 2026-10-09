@@ -88,6 +88,7 @@
     if (!$("capLang").options.length && S && S.languages) {
       for (const [k, v] of Object.entries(S.languages)) {
         $("capLang").append(el("option", { value: k, textContent: v.name }));
+        $("capSpoken").append(el("option", { value: k, textContent: v.native === v.name ? v.name : `${v.name}  ${v.native}` }));
         if ((S.translation_languages || ["en", "zh"]).includes(k))
           $("capTarget").append(el("option", { value: k, textContent: v.native === v.name ? v.name : `${v.name}  ${v.native}` }));
       }
@@ -105,7 +106,8 @@
     $("capStart").hidden = has; $("capLinesCard").hidden = !has;
     $("capScript").value = p.script || "";
     $("capExportVideo").hidden = !p.has_video;
-    $("capLang").value = p.language || "en";
+    $("capLang").value = p.language || "en"; $("capSpoken").value = p.language || "en";
+    speechNote(p.language || "en");
     const lang = p.language || "en", translatable = (S.translation_languages || ["en", "zh"]).includes(lang);
     $("capTrCard").hidden = !translatable;                 // Burmese captions are not translated
     for (const o of $("capTarget").options) o.hidden = o.value === lang;
@@ -219,15 +221,32 @@
   }
 
   /* ---------- reading the speech ---------- */
+  function speechNote(lang) {
+    const can = (S.speech_languages || {})[lang], name = (S.languages[lang] || {}).name || lang;
+    const extra = lang === "zh" ? " in Simplified Chinese" : "";
+    $("capSpeechNote").textContent = can
+      ? `${name} speech is turned into timed lines${extra} on this computer.` +
+        (can.ready ? "" : ` The first time, a speech model of about ${can.mb} MB is downloaded.`)
+      : `${name} speech cannot be read yet. Load a subtitle file instead.`;
+    $("capTranscribe").disabled = !can;
+  }
+  async function setLanguage(lang) {
+    clearTimeout(C.saveTimer);
+    try { await api("/api/captions/save", { id: C.p.id, lines: C.p.lines, language: lang });
+      C.p = await api("/api/captions/project?id=" + C.p.id); paint(); say("capSaved", "Language set"); }
+    catch (e) { say("capSaved", e.message, "err"); say("capJobStatus", e.message, "err"); }
+  }
+  $("capSpoken").addEventListener("change", () => setLanguage($("capSpoken").value));
   async function transcribe() {
     const btn = $("capTranscribe"); btn.disabled = true; $("capRedo").disabled = true;
     try {
       const job = await api("/api/captions/transcribe", { id: C.p.id, script: $("capScript").value, length: C.p.length });
       await pollJob(job, j => { bar("capJobBar", j.percent); say("capJobStatus", j.detail + (j.percent ? " " + j.percent + "%" : ""), "busy"); });
       bar("capJobBar", null); say("capJobStatus", "");
+      if (S.speech_languages && S.speech_languages[C.p.language]) S.speech_languages[C.p.language].ready = true;
       C.p = await api("/api/captions/project?id=" + C.p.id); C.sel = 0; paint();
     } catch (e) { bar("capJobBar", null); say("capJobStatus", e.message, "err"); }
-    btn.disabled = false; $("capRedo").disabled = false;
+    btn.disabled = !(S.speech_languages || {})[C.p.language]; $("capRedo").disabled = false;
   }
   $("capTranscribe").addEventListener("click", transcribe);
   $("capRedo").addEventListener("click", () => {
@@ -252,12 +271,7 @@
     catch (err) { say("capJobStatus", err.message, "err"); }
     $("capSrtFile").value = "";
   });
-  $("capLang").addEventListener("change", async () => {
-    clearTimeout(C.saveTimer);
-    try { await api("/api/captions/save", { id: C.p.id, lines: C.p.lines, language: $("capLang").value });
-      C.p = await api("/api/captions/project?id=" + C.p.id); paint(); say("capSaved", "Language set"); }
-    catch (e) { say("capSaved", e.message, "err"); }
-  });
+  $("capLang").addEventListener("change", () => setLanguage($("capLang").value));
 
   /* ---------- translation ---------- */
   $("capTranslate").addEventListener("click", async () => {

@@ -4,6 +4,32 @@ Each entry records what was chosen, why, and what it costs. Newest first.
 Add an entry whenever an engine, a licence or the shape of the app changes,
 so a later change can be judged against the reason for the first.
 
+## 2026-10-09 · Chinese speech to text: SenseVoice Small
+
+- **Chosen:** SenseVoice Small (2024-07-17 int8 conversion) through
+  sherpa-onnx, which the app already has, for projects whose language is
+  Chinese. The Silero voice activity detector (MIT) cuts the recording into
+  stretches of speech first and each is read alone. Parakeet stays for
+  English. The project's language picks the recogniser; Burmese has none yet,
+  so the app says so instead of producing nonsense.
+- **Why:** Parakeet is English only: on Chinese it wrote English-looking
+  syllables. In the spike (Speech sample workflow, Mac processor, Mandarin
+  with known text and real recordings) SenseVoice read about ten times faster
+  than real time with 1-2% of characters wrong, and gave Simplified Chinese
+  with punctuation, numbers as digits, and a time for every character.
+  Whisper large-v3-turbo was as accurate (0.7%) but about ten times slower
+  (1.1x real time, so a 2.5-hour video takes hours); Whisper small was
+  slower and less accurate. The September 2025 SenseVoice update writes no
+  punctuation or numbers and dropped a word in the real recording. A
+  separate punctuation model was not needed.
+- **Cost:** the FunASR model licence lets anyone use and share the model with
+  credit, but calls it "provided for reference and learning purposes only";
+  fine for this free tool, to be checked again before any commercial use.
+  Without the voice activity detector SenseVoice skipped whole sentences in
+  half-minute pieces. Chinese has no spaces, so caption lines break at
+  punctuation, pauses and the longest gap near the length limit, which can
+  still split a word now and then.
+
 ## 2026-10-09 · Translation: English and Chinese only
 
 - **Chosen:** translation between English and Chinese, either way. Burmese

@@ -13,7 +13,7 @@ from pathlib import Path
 from . import captions, fonts, languages, library, media, render, text as T, workers
 from .config import LOGS, MODELS, OUTPUT, PROJECTS, profile_store
 from .jobs import jobs, start as _start  # noqa: F401  (jobs is read by the server)
-from .listeners import create_listener
+from .listeners import listener_for
 from .translate import get_translator
 
 _lock = threading.RLock()
@@ -148,16 +148,20 @@ def regroup(project_id, length):
     if not project["words"]:
         raise ValueError("Line length can only change on captions made from speech.")
     project["length"] = length if length in captions.LENGTHS else "short"
-    project["lines"] = captions.group(project["words"], project["length"])
+    project["lines"] = captions.group(project["words"], project["length"], project.get("language", "en"))
     return save(project)
 
 
 # ---- background jobs -------------------------------------------------------
 def start_transcribe(project_id, script=None, length=None):
     project = load(project_id)
+    lang = project.get("language", "en")
+    listener = listener_for(lang)
+    if listener is None:
+        raise ValueError(languages.LANGUAGES[languages.valid(lang)]["name"] + " speech cannot be read yet. "
+                         "Load a subtitle file instead, or choose the language that is spoken.")
 
     def work(progress):
-        listener = create_listener()
         if not listener.ready(MODELS):
             listener.install(MODELS, progress)
         progress(0, "Listening to the recording")
@@ -184,7 +188,7 @@ def start_transcribe(project_id, script=None, length=None):
                 reason = ""
             raise RuntimeError("Speech recognition stopped unexpectedly. " + reason if reason
                                else "Speech recognition stopped unexpectedly. Details are in the log folder.")
-        words = captions.word_ends(json.loads(out.read_text(encoding="utf-8")), project["duration"] or 1e9)
+        words = captions.word_ends(json.loads(out.read_text(encoding="utf-8")), project["duration"] or 1e9, lang)
         for leftover in (out, Path(str(out) + ".progress")):
             leftover.unlink(missing_ok=True)
         fresh = load(project_id)
@@ -193,10 +197,11 @@ def start_transcribe(project_id, script=None, length=None):
         exact = T.normalize(fresh["script"]).replace("\n", " ") if fresh["script"].strip() else ""
         if exact:
             exact = re.sub(r"\[\s*pause[^\]]*\]", " ", exact, flags=re.I)
-            words = captions.align(exact, words)
+            words = captions.align(exact, words, lang)
         fresh["words"] = words
+        fresh["language"] = lang
         fresh["length"] = length if length in captions.LENGTHS else fresh.get("length", "short")
-        fresh["lines"] = captions.group(words, fresh["length"])
+        fresh["lines"] = captions.group(words, fresh["length"], lang)
         save(fresh)
         return {"lines": len(fresh["lines"]), "words": len(words)}
 

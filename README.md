@@ -13,7 +13,7 @@ YouTube channel and shared with friends.
 | **Pronunciation** | Fix how a word is said once; every later clip uses the fix. |
 | **Settings** | Translation, performance, storage, updates, about and licences. |
 
-Version 3.0.0-beta.1 (test version). See [CHANGELOG.md](CHANGELOG.md) for what changed.
+Version 3.0.0-beta.3 (test version). See [CHANGELOG.md](CHANGELOG.md) for what changed.
 
 ---
 
@@ -50,13 +50,14 @@ time you need them, inside the app:
 | Feature | Download | When |
 | --- | --- | --- |
 | Voiceover | Kokoro voice, about 340 MB | After the welcome screen |
-| Captions | Parakeet speech to text, about 480 MB | The first time you make captions |
+| English captions | Parakeet speech to text, about 480 MB | The first time you make English captions |
+| Chinese captions | SenseVoice speech to text, about 160 MB | The first time you make Chinese captions |
 | Translation | TranslateGemma 4B by Google, about 2.5 GB | The first time you translate |
 
 No sign-in anywhere. After a model is downloaded, its feature works offline.
 
 **What your computer needs:** 8 GB of memory (16 GB is comfortable for
-translation), and about 4 GB of free disk for all three models. A graphics
+translation), and about 4 GB of free disk for all the models. A graphics
 chip or card is used when there is one, but none is needed.
 
 ## How to use it
@@ -69,8 +70,9 @@ type.
 **Captions.** Drop in a video or audio file, or press **Captions** on a
 Library clip. Pasting the script gives captions with your exact wording on
 the recognised timings. Edit, split and join lines, pick a font and style,
-then export an SRT file or a captioned copy of the video. Speech recognition
-is English only for now.
+then export an SRT file or a captioned copy of the video. Choose the language
+that is spoken before **Create captions**: English and Chinese (written in
+Simplified Chinese) can be read; for Burmese, load a subtitle file.
 
 **Translate.** English and Chinese, either way. Paste text, pick the
 languages (or let the app detect the source) and press Translate. In Captions, **Translate captions** makes a new
@@ -115,6 +117,7 @@ kept.
 | Translation is slow | The first sentence loads the model (up to a minute). After that, a sentence takes a few seconds with a graphics chip, longer on the processor alone. |
 | Chinese or Burmese captions show empty boxes | The font has no letters for that language; the app refuses such fonts. Pick another font. |
 | A download stopped | Press the button again; it continues where it stopped. |
+| Chinese captions look like English syllables | Set **The speech is in** to Chinese, press **Read speech again**, then **Create captions**. |
 | Something else | **Settings > About > Open log folder**, and send the newest log file with a description. |
 
 Quit with **Settings > Quit Factopia Voice**, or close the window.

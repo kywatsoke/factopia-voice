@@ -4,28 +4,54 @@ import difflib
 import re
 
 LENGTHS = {"short": (18, 3), "medium": (32, 6), "long": (84, 16)}   # (max characters, max words) per line
-_ENDS = ".!?\u2026"
+LENGTHS_CJK = {"short": 8, "medium": 14, "long": 26}                # Chinese: characters per line
+_ENDS = ".!?\u2026\u3002\uff01\uff1f"                                # also 。！？
+_HAN = re.compile(r"[\u3400-\u9fff\uf900-\ufaff]")
+_WIDE = re.compile(r"[\u3000-\u303f\u3400-\u9fff\uf900-\ufaff\uff00-\uffef]")   # Chinese characters and marks
+_MARKS = re.compile(r"^[\W_]+$")                                    # punctuation only
 
 
-def word_ends(words, limit):
-    """Give each word an end time: the next word's start, unless a pause follows."""
+def _chinese(lang):
+    return lang == "zh"
+
+
+def _width(text, chinese):
+    """Line length: for Chinese, a character counts 1, an English letter half,
+    and the mark at the end of a line nothing."""
+    if not chinese:
+        return len(text)
+    text = text.rstrip("\u3002\uff0c\u3001\uff1b\uff1a\uff01\uff1f.,;:!?")   # a closing mark takes no room
+    wide = len(_WIDE.findall(text))
+    return wide + (len(text) - wide) / 2
+
+
+def word_ends(words, limit, lang="en"):
+    """Give each word an end time: the next word's start, unless a pause follows.
+    Chinese comes one character at a time, so a shorter gap counts as a pause."""
+    pause = 0.6 if _chinese(lang) else 1.0
     out = []
     for i, w in enumerate(words):
-        natural = w["start"] + 0.25 + 0.06 * len(w["text"])
+        natural = w["start"] + (0.3 if _chinese(lang) else 0.25 + 0.06 * len(w["text"]))
         nxt = words[i + 1]["start"] if i + 1 < len(words) else limit
-        end = nxt if nxt - w["start"] <= 1.0 else natural     # a long gap is a pause, not a long word
+        end = nxt if nxt - w["start"] <= pause else natural     # a long gap is a pause, not a long word
         out.append({"text": w["text"], "start": round(w["start"], 3),
                     "end": round(max(w["start"] + 0.05, min(end, limit)), 3)})
     return out
 
 
 def words_from_tokens(tokens, starts, offset=0.0):
-    """Join recogniser word pieces (a leading space starts a new word) into words."""
+    """Join recogniser word pieces (a leading space starts a new word) into words.
+    Each Chinese character is a word of its own; punctuation joins the word before."""
     words = []
     for token, start in zip(tokens, starts):
-        if token.startswith(" ") or not words:
-            if token.strip():
-                words.append({"text": token.strip(), "start": float(start) + offset})
+        piece = token.strip()
+        if not piece:
+            continue
+        if words and _MARKS.match(piece):
+            words[-1]["text"] += piece
+        elif (not words or token.startswith(" ") or _HAN.match(piece[0])
+              or _WIDE.match(words[-1]["text"][-1])):
+            words.append({"text": piece, "start": float(start) + offset})
         else:
             words[-1]["text"] += token
     return words
@@ -35,10 +61,28 @@ def _key(word):
     return re.sub(r"[^\w']", "", word.lower().replace("\u2019", "'"))
 
 
-def align(script, words):
+def _script_words(script, lang):
+    """The script split the way the recogniser gives words: by spaces, and for
+    Chinese one character at a time (punctuation stays with its character)."""
+    if not _chinese(lang):
+        return script.split()
+    from .languages import segments
+    out = []
+    for piece in segments(" ".join(script.split())):
+        piece = piece.strip()
+        if not piece:
+            continue
+        if out and _MARKS.match(piece):
+            out[-1] += piece
+        else:
+            out.append(piece)
+    return out
+
+
+def align(script, words, lang="en"):
     """Put the script's exact words on the recogniser's timings. Words the
     recogniser heard differently are spaced evenly between their neighbours."""
-    target = script.split()
+    target = _script_words(script, lang)
     if not target or not words:
         return words
     matcher = difflib.SequenceMatcher(None, [_key(w) for w in target], [_key(w["text"]) for w in words], autojunk=False)
@@ -66,33 +110,66 @@ def align(script, words):
     return [{"text": t, "start": round(s, 3), "end": round(max(e, s + 0.05), 3)} for t, (s, e) in zip(target, times)]
 
 
-def group(words, length="short"):
+def _joined(parts, chinese):
+    if not chinese:
+        return " ".join(parts)
+    out = ""
+    for p in parts:              # no spaces next to Chinese characters; English words keep theirs
+        if out and not _WIDE.match(out[-1]) and not _WIDE.match(p[0]):
+            out += " "
+        out += p
+    return out
+
+
+def _soft_break(current, nxt):
+    """Where a full Chinese line should end. Without spaces, the timing is the
+    best clue to word edges: within the last three characters, break where the
+    speaker left the longest gap, so a word is less likely to be cut in two."""
+    if len(current) < 5:
+        return len(current)
+    starts = [x["start"] for x in current] + [nxt["start"]]
+    best = len(current)
+    for k in range(len(current) - 2, len(current) + 1):
+        if starts[k] - starts[k - 1] > starts[best] - starts[best - 1] + 0.05:
+            best = k
+    return best
+
+
+def group(words, length="short", lang="en"):
     """Break words into caption lines at sentence ends, pauses and the length limit."""
-    max_chars, max_words = LENGTHS.get(length, LENGTHS["short"])
+    chinese = _chinese(lang)
+    if chinese:
+        max_chars, max_words, gap = LENGTHS_CJK.get(length, LENGTHS_CJK["short"]), 10 ** 6, 0.25
+    else:
+        (max_chars, max_words), gap = LENGTHS.get(length, LENGTHS["short"]), 0.6
+    commas = ",\uff0c\u3001"                                       # , ， 、
     lines, current = [], []
 
-    def flush():
-        if current:
-            lines.append({"start": current[0]["start"], "end": current[-1]["end"],
-                          "text": " ".join(w["text"] for w in current)})
-            current.clear()
+    def flush(upto=None):
+        upto = len(current) if upto is None else upto
+        if upto:
+            lines.append({"start": current[0]["start"], "end": current[upto - 1]["end"],
+                          "text": _joined([w["text"] for w in current[:upto]], chinese)})
+            del current[:upto]
 
     for w in words:
         if current:
-            text = " ".join(x["text"] for x in current)
+            text = _joined([x["text"] for x in current], chinese)
             prev = current[-1]
-            if (len(text) + 1 + len(w["text"]) > max_chars or len(current) >= max_words
-                    or w["start"] - prev["end"] > 0.6 or prev["text"][-1:] in _ENDS
-                    or (prev["text"].endswith(",") and len(text) >= max_chars * 0.6)):
+            if (w["start"] - prev["end"] > gap or prev["text"][-1:] in _ENDS
+                    or (prev["text"][-1:] in commas and _width(text, chinese) >= max_chars * 0.6)):
                 flush()
+            elif _width(_joined([text, w["text"]], chinese), chinese) > max_chars or len(current) >= max_words:
+                flush(_soft_break(current, w) if chinese else None)
         current.append(w)
     flush()
     merged = []                    # a single leftover word reads better on the line before it
     for line in lines:
         prev = merged[-1] if merged else None
-        if (prev and " " not in line["text"] and prev["text"][-1:] not in _ENDS
-                and line["start"] - prev["end"] <= 0.6 and len(prev["text"]) + 1 + len(line["text"]) <= max_chars + 10):
-            prev["text"] += " " + line["text"]
+        alone = _width(line["text"], True) <= 2 if chinese else " " not in line["text"]
+        if (prev and alone and prev["text"][-1:] not in _ENDS and line["start"] - prev["end"] <= gap
+                and _width(_joined([prev["text"], line["text"]], chinese), chinese) <= max_chars + (3 if chinese else 10)):
+            prev["text"] = _joined([prev["text"], line["text"]], chinese)
             prev["end"] = line["end"]
         else:
             merged.append(line)

@@ -27,6 +27,17 @@ TYPES = {".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8",
          ".srt": "application/x-subrip; charset=utf-8"}
 
 
+def speech_languages():
+    """The spoken languages captions can be made from, with the model each needs."""
+    from .listeners import listener_for
+    out = {}
+    for code in languages.LANGUAGES:
+        listener = listener_for(code)
+        if listener:
+            out[code] = {"model": listener.name, "mb": listener.size_mb, "ready": listener.ready(MODELS)}
+    return out
+
+
 def state():
     profile = profile_store.load()
     engine = studio.engine
@@ -42,6 +53,7 @@ def state():
         "dictionary": dictionary_store.load(), "library": library.items(),
         "languages": {k: {"name": v["name"], "native": v["native"]} for k, v in languages.LANGUAGES.items()},
         "translation_languages": list(languages.TRANSLATION),
+        "speech_languages": speech_languages(),
         "translation": {"engine": choice, "setting": profile.get("translation_engine", "auto"), "engines": ENGINES,
                         "qualities": qualities(choice)},
         "translation_qualities": qualities(choice),
