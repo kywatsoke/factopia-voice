@@ -86,11 +86,30 @@ def cer(ref, hyp):
     return d[len(h)] / max(1, len(r))
 
 
-def run_sensevoice(folder, wav):
+_RECOGNISERS = {}
+_PUNCT = {}
+ALL_TIMINGS = {}
+
+
+def punctuate(folder, text):
     import sherpa_onnx
-    model = next(Path(folder).glob("model*.int8.onnx"), None) or next(Path(folder).glob("model*.onnx"))
-    rec = sherpa_onnx.OfflineRecognizer.from_sense_voice(model=str(model), tokens=str(Path(folder) / "tokens.txt"),
-                                                         language="auto", use_itn=True, num_threads=4)
+    if not folder:
+        return None
+    if folder not in _PUNCT:
+        model = next(Path(folder).glob("model*.onnx"))
+        cfg = sherpa_onnx.OfflinePunctuationConfig(
+            model=sherpa_onnx.OfflinePunctuationModelConfig(ct_transformer=str(model), num_threads=2))
+        _PUNCT[folder] = sherpa_onnx.OfflinePunctuation(cfg)
+    return _PUNCT[folder].add_punctuation(text)
+
+
+def run_sensevoice(folder, wav, language, punct=None, key=None):
+    import sherpa_onnx
+    if (folder, language) not in _RECOGNISERS:
+        model = next(Path(folder).glob("model*.int8.onnx"), None) or next(Path(folder).glob("model*.onnx"))
+        _RECOGNISERS[(folder, language)] = sherpa_onnx.OfflineRecognizer.from_sense_voice(
+            model=str(model), tokens=str(Path(folder) / "tokens.txt"), language=language, use_itn=True, num_threads=4)
+    rec = _RECOGNISERS[(folder, language)]
     samples, rate = sf.read(str(wav), dtype="float32")
     started = time.time()
     s = rec.create_stream()
@@ -99,7 +118,14 @@ def run_sensevoice(folder, wav):
     took = time.time() - started
     res = s.result
     timestamps = list(getattr(res, "timestamps", []) or [])
-    return {"text": res.text, "seconds": took, "audio": len(samples) / rate,
+    if key:
+        ALL_TIMINGS[key] = [(t, round(float(x), 2)) for t, x in zip(list(res.tokens), timestamps)]
+    text = res.text
+    started = time.time()
+    punctuated = punctuate(punct, text) if punct else None
+    ptook = time.time() - started
+    return {"text": text + (f" ⟶ punctuated ({ptook:.2f} s): {punctuated}" if punctuated else ""), "score_text": text,
+            "seconds": took, "audio": len(samples) / rate,
             "timings": f"{len(timestamps)} token times" if timestamps else "none",
             "first_timings": [(t, round(float(x), 2)) for t, x in zip(list(res.tokens)[:6], timestamps[:6])]}
 
@@ -110,7 +136,8 @@ def run_whisper(size, wav):
     model = WhisperModel(size, device="cpu", compute_type="int8")
     loaded = time.time() - load
     started = time.time()
-    segments, info = model.transcribe(str(wav), language="zh", word_timestamps=True, vad_filter=True,
+    samples, _ = sf.read(str(wav), dtype="float32")        # an array, not a path: no PyAV
+    segments, info = model.transcribe(samples, language="zh", word_timestamps=True, vad_filter=True,
                                       initial_prompt="以下是普通话的句子，使用简体中文。", beam_size=5)
     words, text = [], ""
     for seg in segments:
@@ -125,7 +152,8 @@ def run_whisper(size, wav):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--work", required=True)
-    ap.add_argument("--sensevoice", required=True)
+    ap.add_argument("--sensevoice", required=True, nargs="+")
+    ap.add_argument("--punct", default="")
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
     work = Path(args.work)
@@ -136,10 +164,16 @@ def main():
     except Exception as e:
         log("Kokoro sample failed:", type(e).__name__, e)
     for name in ("zh.wav", "yue.wav", "en.wav"):
-        p = Path(args.sensevoice) / "test_wavs" / name
+        p = Path(args.sensevoice[0]) / "test_wavs" / name
         if p.exists():
             samples.append((f"SenseVoice test recording {name} (human)", to16k(p, work), None))
-    engines = [("SenseVoice-Small int8 (sherpa-onnx)", lambda w: run_sensevoice(args.sensevoice, w)),
+    engines = []
+    for folder in args.sensevoice:
+        tag = Path(folder).name.split("yue-")[-1]
+        engines.append((f"SenseVoice {tag}, language zh", lambda w, f=folder, t=tag: run_sensevoice(
+            f, w, "zh", args.punct, key=f"{t} {Path(w).name}")))
+        engines.append((f"SenseVoice {tag}, language auto", lambda w, f=folder: run_sensevoice(f, w, "auto")))
+    engines += [
                ("Whisper small int8 (faster-whisper)", lambda w: run_whisper("small", w)),
                ("Whisper large-v3-turbo int8 (faster-whisper)", lambda w: run_whisper("large-v3-turbo", w))]
     lines = [f"# Speech-to-text sample: Chinese", "",
@@ -154,7 +188,7 @@ def main():
             try:
                 r = fn(wav)
                 speed = r["audio"] / max(r["seconds"], 1e-6)
-                score = f"{cer(ref, r['text']) * 100:.1f}%" if ref else "-"
+                score = f"{cer(ref, r.get('score_text', r['text'])) * 100:.1f}%" if ref else "-"
                 lines.append(f"| {name} | {r['text'].strip()} | {score} | {speed:.1f}x | {r['timings']} | "
                              f"{json.dumps(r['first_timings'], ensure_ascii=False)} |")
                 results.setdefault(name, []).append(score)
@@ -163,6 +197,9 @@ def main():
                 lines.append(f"| {name} | failed: {type(e).__name__}: {str(e)[:200]} | | | | |")
                 log(name, "failed", e)
         lines.append("")
+    lines += ["## All SenseVoice token times (language zh)", ""]
+    for key, times in ALL_TIMINGS.items():
+        lines += [f"**{key}**", "", "```", json.dumps(times, ensure_ascii=False), "```", ""]
     Path(args.out).write_text("\n".join(lines) + "\n", encoding="utf-8")
     log("\n".join(lines))
 
