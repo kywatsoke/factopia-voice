@@ -11,8 +11,12 @@ SOURCE_URL = "https://github.com/kywatsoke/factopia-voice"
 MODELS = [
     {"name": "Kokoro-82M", "role": "Voice", "licence": "Apache 2.0",
      "url": "https://huggingface.co/hexgrad/Kokoro-82M"},
-    {"name": "Parakeet TDT 0.6B v2 by NVIDIA", "role": "Speech to text", "licence": "CC BY 4.0",
+    {"name": "Parakeet TDT 0.6B v2 by NVIDIA", "role": "English speech to text", "licence": "CC BY 4.0",
      "url": "https://huggingface.co/nvidia/parakeet-tdt-0.6b-v2"},
+    {"name": "SenseVoice Small by Alibaba (FunAudioLLM)", "role": "Chinese speech to text",
+     "licence": "FunASR Model Licence 1.1", "url": "https://github.com/FunAudioLLM/SenseVoice"},
+    {"name": "Silero VAD", "role": "Finds speech for SenseVoice", "licence": "MIT",
+     "url": "https://github.com/snakers4/silero-vad"},
     {"name": "TranslateGemma by Google", "role": "Translation", "licence": "Gemma Terms of Use",
      "url": TERMS_URL, "notice": NOTICE, "policy": POLICY_URL},
 ]

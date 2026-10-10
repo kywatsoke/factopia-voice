@@ -13,6 +13,7 @@ def esc(text):
 
 
 def main():
+    sys.stdout.reconfigure(encoding="utf-8")        # Windows pipes default to cp1252; results hold Chinese
     path, label = Path(sys.argv[1]), sys.argv[2]
     if not path.exists():
         print(f"::error title={label}::The app did not write a self-test result (it may not have started).")

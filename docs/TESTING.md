@@ -5,7 +5,7 @@ run on the release zip before a version is called done.
 
 ## Automated tests
 
-76 tests, run with pytest (command in [DEVELOPMENT.md](DEVELOPMENT.md)).
+82 tests, run with pytest (command in [DEVELOPMENT.md](DEVELOPMENT.md)).
 
 | File | Covers |
 | --- | --- |
@@ -32,7 +32,7 @@ every check on the run's summary page: version, text shaping (raqm with the
 bundled FriBiDi), voice engine, speech engine, video tools and hardware
 encoder, fonts, translation engine (llama-server), window toolkit, helper
 process, local server, a sentence spoken by Kokoro and heard back by
-Parakeet. Then it installs the installer (silently on Windows, from the
+Parakeet, and a Chinese recording read by SenseVoice. Then it installs the installer (silently on Windows, from the
 mounted `.dmg` on Mac), runs the self-test on the installed copy, and on
 Windows uninstalls again.
 
@@ -61,6 +61,8 @@ Voice. Note the date, machine and result in the verification record.
 
 **Captions**
 - [ ] A 60-second MP4 imports; the speech model downloads on first use.
+- [ ] A Chinese video with "The speech is in: Chinese" gives Simplified Chinese
+      lines with punctuation; Burmese says it cannot be read yet.
 - [ ] Captions appear with sensible timings; pasting the script gives its exact wording.
 - [ ] Editing, splitting and joining lines work; the preview follows style changes.
 - [ ] SRT export opens in CapCut or a video player.

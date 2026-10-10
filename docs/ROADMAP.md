@@ -23,6 +23,8 @@ This file is a snapshot of it for the repository, taken 9 October 2026
 | Real-model translation test on the Mac | 3.0 | Open: run on GitHub instead on 9 Oct 2026; the Mac run is part of the beta check |
 | Burmese burned-in captions on Mac and Windows: supply FriBiDi so Pillow can shape Burmese | 3.0 | Done: bundled; raqm on in the packed Mac app |
 | Judge Burmese and Chinese output; choose 4B or 12B | 3.0 | Done 9 Oct 2026: Chinese good, Burmese not usable with either; Burmese translation removed, 4B stays |
+| Chinese speech to text (Parakeet wrote Chinese as English-looking syllables) | 3.0 | Done 9 Oct 2026 in beta.3: SenseVoice reads Chinese; the project's language picks the model |
+| Burmese speech to text | Later | Open: no recogniser yet; the app says so. Candidates to try: Whisper (MIT), Dolphin |
 | Voice tone improvement (rated about 60%) | Next | Not started |
 | Rename the app (it is more than a voice now) | Next | Not started |
 | Voice picker and more voices (Kokoro has 54) | Later | Later |

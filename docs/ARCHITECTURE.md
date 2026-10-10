@@ -31,8 +31,11 @@ and Windows; nothing is written per platform except the two small launchers.
                  render.py: preview frame  ·  SRT  ·  video with captions burned in
 ```
 
-- `listeners/` mirrors `engines/`: one file per speech-to-text model. Parakeet
-  (English) is the first; a multilingual model is another file.
+- `listeners/` mirrors `engines/`: one file per speech-to-text model, each
+  naming the languages it reads. Parakeet reads English; SenseVoice reads
+  Chinese, one stretch of speech at a time (the Silero detector finds them).
+  `listener_for(language)` picks by the project's language; a language with
+  no listener (Burmese) is refused with a message.
 - Recognition runs as a separate process (`listeners/worker.py`) so its memory
   is returned afterwards and its runtime cannot clash with the voice engine's.
 - `render.py` draws captions with Pillow and blends them onto raw frames piped
@@ -63,7 +66,7 @@ and Windows; nothing is written per platform except the two small launchers.
 | `pipeline.py` | Script to voiceover: the Studio's one path |
 | `text.py`, `audio.py`, `library.py`, `downloads.py` | Script rules, audio assembly, clip history, model downloads |
 | `engines/` | Speech engines (Kokoro) |
-| `listeners/` | Speech-to-text models (Parakeet), run in `worker.py` |
+| `listeners/` | Speech-to-text models (Parakeet for English, SenseVoice for Chinese), run in `worker.py` |
 | `media.py` | ffmpeg: probe, extract audio, frames |
 | `captions.py` | Word timing, alignment to a script, line grouping, SRT |
 | `projects.py` | Caption projects on disk and their background jobs |
@@ -155,6 +158,7 @@ the address as a QR code. Kept out of 2.0 on purpose: it widens exposure.
 | --- | --- | --- | --- | --- |
 | Kokoro 82M voice | 2-core cloud CPU, no GPU | 24 s of audio in about 10 s | about 1.1 GB | 354 MB |
 | Parakeet speech to text | 2-core cloud CPU | 8.1x real time; 1.6% word errors on the test clips | about 1.1 GB, freed when the worker exits | 460 MB |
+| SenseVoice Chinese speech to text | GitHub's Mac runner, processor | about 10x real time; 1-2% character errors on the test Mandarin | freed when the worker exits | 230 MB (160 MB download) |
 | TranslateGemma 4B (llama.cpp, Q4_K_M) | 4-core cloud CPU, no GPU | about 12 s per sentence | llama-server's own process | 2.49 GB |
 
 A recent laptop is faster than the cloud CPU.

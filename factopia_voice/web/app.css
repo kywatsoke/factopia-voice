@@ -189,6 +189,8 @@ h2{font-size:18px;margin:4px 0 6px;letter-spacing:-.01em}
 .tr-go{max-width:320px}
 #view-translate .bar{max-width:520px;margin-top:12px}
 .lang-pick{margin-left:10px;font-size:13.5px;color:var(--mute)}
+.spoken{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:14px}
+.spoken select{padding:5px 8px;border:1px solid var(--line2);border-radius:8px;background:var(--field);font-size:14px}
 .lang-pick select{margin-left:6px;padding:3px 6px;border:1px solid var(--line2);border-radius:7px;background:var(--field);font-size:13.5px}
 .small-gap{margin:4px 0 10px}
 .pair-row{display:flex;gap:8px}.pair-row select{flex:1;padding:8px;border:1px solid var(--line2);border-radius:9px;background:var(--field)}

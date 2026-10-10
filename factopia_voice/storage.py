@@ -28,12 +28,15 @@ def size_of(path):
 def _model_items():
     from .engines import create_engine
     from .listeners.parakeet import FOLDER as SPEECH
+    from .listeners.sensevoice import FOLDER as SPEECH_ZH
     from .translate import llamacpp
     voice = [MODELS / f.name for f in create_engine("kokoro").files()]
     items = [{"id": "voice", "label": "Voice (Kokoro)", "paths": voice, "removable": False,
               "note": "Needed for voiceovers"},
-             {"id": "speech", "label": "Speech to text (Parakeet)", "paths": [MODELS / SPEECH], "removable": True,
-              "note": "Downloads again the next time you make captions"}]
+             {"id": "speech", "label": "English speech to text (Parakeet)", "paths": [MODELS / SPEECH], "removable": True,
+              "note": "Downloads again the next time you make English captions"},
+             {"id": "speech-zh", "label": "Chinese speech to text (SenseVoice)", "paths": [MODELS / SPEECH_ZH],
+              "removable": True, "note": "Downloads again the next time you make Chinese captions"}]
     for quality, spec in llamacpp.MODELS_AVAILABLE.items():
         items.append({"id": f"translation-{quality}", "label": f"Translation ({spec.label})",
                       "paths": [MODELS / llamacpp.FOLDER / spec.file], "removable": True,
